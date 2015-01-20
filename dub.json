@@ -3,5 +3,6 @@
   "description": "Simple CLI finance manager",
   "copyright": "Copyright © 2015, rcorre",
   "license": "MIT",
+  "targetPath": "bin/tact",
   "authors": ["rcorre"]
 }
