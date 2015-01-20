@@ -1,0 +1,7 @@
+{
+  "name": "tact",
+  "description": "Simple CLI finance manager",
+  "copyright": "Copyright © 2015, rcorre",
+  "license": "MIT",
+  "authors": ["rcorre"]
+}
