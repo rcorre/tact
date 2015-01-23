@@ -14,7 +14,7 @@ void interpretTransaction(string[] args) {
   Transaction trans;
 
   // callback to set transaction date from string
-  void setDate(string dateString) {
+  void setDate(string opt, string dateString) {
     trans.date = parseDate(dateString);
   }
 
@@ -27,7 +27,7 @@ void interpretTransaction(string[] args) {
     "note",   &trans.note
   );
 
-  //printTransaction(trans);
+  printTransaction(trans);
 }
 
 Date parseDate(string dateString) {

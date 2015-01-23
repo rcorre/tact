@@ -3,6 +3,10 @@ module printer;
 import std.stdio, std.algorithm, std.conv, std.string, std.datetime;
 import transaction;
 
+void printTransaction(Transaction transaction) {
+  writeln(transaction.toString(" | "));
+}
+
 string toString(Transaction transaction, string fieldSep) {
   string[] fields = [
     transaction.date.to!string,
