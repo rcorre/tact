@@ -4,5 +4,8 @@
   "copyright": "Copyright © 2015, rcorre",
   "license": "MIT",
   "targetPath": "bin/",
-  "authors": ["rcorre"]
+  "authors": ["rcorre"],
+  "dependencies": {
+    "dini": ">=1.0.0"
+  }
 }

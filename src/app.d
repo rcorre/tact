@@ -1,11 +1,10 @@
 import std.stdio;
+import config;
 import interpreter;
 
 void main(string[] args) {
-  try {
-    interpretCommand(args); // strip executable name
-  }
-  catch(Throwable ex) {
-    writeln("Error:", ex.msg);
-  }
+  bool foundConfig;
+  auto cfg = Config.load;
+  writeln(cfg.storageDir);
+  //interpretCommand(args); // strip executable name
 }
