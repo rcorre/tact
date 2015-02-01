@@ -16,10 +16,10 @@ else {
 }
 
 struct Config {
-  // members with defaults
+  /// members with defaults
   string storageDir = defaultStorageDir;
 
-  // load from ini
+  /// load from ini
   this(Ini ini) {
     storageDir = ini.getKey("storageDir");
   }
@@ -27,8 +27,8 @@ struct Config {
   /// returns config loaded from conigPath
   /// returns a default-constructed config if the config file is not found
   static Config load() {
+    Config cfg; // defaul constructed cfg
     auto path = configPath.expandTilde;
-    Config cfg;
     if (path.exists) {
       cfg = Config(Ini.Parse(path));
     }
