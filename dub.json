@@ -6,6 +6,7 @@
   "targetPath": "bin/",
   "authors": ["rcorre"],
   "dependencies": {
-    "dini": ">=1.0.0"
+    "dini": ">=1.0.0",
+    "jsonizer": ">=0.0.0"
   }
 }
