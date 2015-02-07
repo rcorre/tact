@@ -1,8 +1,8 @@
 module config;
 
-import std.path;
-import std.file;
+import std.path, std.file, std.exception;
 import dini;
+import command;
 
 version(Windows) {
   static assert(0, "don't know where windows home dir is");
@@ -13,29 +13,33 @@ else {
 
 /// keywords used to identify transaction and query parameters
 enum defaultKeywords = [
-  "amount"    : "amount", /// the quantity of money in a transaction
-  "source"    : "from",   /// the source (sender) of a transaction
-  "dest"      : "to",     /// the destination (recipient) of a transaction
-  "date"      : "on",     /// to date on which a transaction occured
-  "note"      : "note",   /// a note about the transaction
-  "endDate"   : "before", /// latest date to include in query
-  "startDate" : "after",  /// earliest date to include in query
+  CommandKeyword.amount    : "amount", /// the quantity of money in a transaction
+  CommandKeyword.source    : "from",   /// the source (sender) of a transaction
+  CommandKeyword.dest      : "to",     /// the destination (recipient) of a transaction
+  CommandKeyword.date      : "on",     /// to date on which a transaction occured
+  CommandKeyword.note      : "note",   /// a note about the transaction
 ];
 
 struct Config {
   /// directory where transaction records should be stored
-  string storageDir = defaultStorageDir;
-  string[string] keywords;
+  string storageDir;
+  string[CommandKeyword] keywords;
 
   this(Ini ini) {
-    storageDir = ini.getKey("storageDir");
+    storageDir = ini.keys.get("storageDir", defaultStorageDir);
 
+    // replace default keywords from config entries
+    keywords = defaultKeywords;
     if (ini.hasSection("keywords")) {
       auto keywordSection = ini.getSection("keywords");
-      foreach(key, val ; defaultKeywords) {
-        keywords[key] = (key in keywordSection.keys) ?
-          keywordSection.getKey(key) :
-          defaultKeywords[key];
+      foreach(key, val ; keywordSection.keys) {
+        try {
+          auto keyword = key.to!CommandKeyword;
+          keywords[keyword] = val;
+        }
+        catch {
+          enforce(0, key ~ " is not a known tact keyword");
+        }
       }
     }
   }
@@ -45,8 +49,13 @@ struct Config {
     Config cfg;
     auto expandedPath = path.expandTilde;
 
-    if (expandedPath.exists) {
+    
+    if (expandedPath.exists) {               // load config
       cfg = Config(Ini.Parse(expandedPath));
+    }
+    else {                                   // default config
+      cfg.storageDir = defaultStorageDir;
+      cfg.keywords = defaultKeywords;
     }
 
     return cfg;
@@ -76,8 +85,7 @@ unittest {
     "[keywords]",
     "amount  = price",
     "date    = date",
-    "note    = description",
-    "invalid = notakeyword",
+    "note    = description"
   ].joiner("\n");
 
   cfgPath.write(cfgText.text);
@@ -86,9 +94,9 @@ unittest {
   assert(cfg.storageDir == "~/my_custom_dir/tact");
 
   auto expectedKeywords = defaultKeywords;
-  expectedKeywords["amount"] = "price";
-  expectedKeywords["date"]   = "date";
-  expectedKeywords["note"]   = "description";
+  expectedKeywords[CommandKeyword.amount] = "price";
+  expectedKeywords[CommandKeyword.date  ] = "date";
+  expectedKeywords[CommandKeyword.note  ] = "description";
 
   assert(cfg.keywords == expectedKeywords);
 }
