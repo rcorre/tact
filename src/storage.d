@@ -6,6 +6,7 @@ import std.path;
 import std.range;
 import std.string;
 import std.datetime;
+import std.algorithm;
 import config;
 import jsonizer;
 import transaction;
@@ -31,8 +32,11 @@ void storeTransaction(Transaction newTransaction, string storageDir) {
   }
 }
 
-Transaction loadTransactions(Date startDate, Date endDate, string storageDir) {
-  return Transaction();
+auto loadTransactions(Date startDate, Date endDate, string storageDir) {
+  return
+    datesToPaths(startDate, endDate, storageDir) // for all paths covering date range
+    .map!(file => file.readJSON!(Transaction[])) // extract transaction data
+    .reduce!((a,b) => a ~ b);                    // flatten range of ranges
 }
 
 unittest {
@@ -44,14 +48,20 @@ unittest {
       dir.rmdirRecurse;
     }
   }
-  Transaction trans;
-  trans.amount = 125.25;
-  trans.source = "credit_card";
-  trans.dest = "grocery_store";
-  trans.note = "food and stuff";
-  trans.date = Date(2015, 5, 21);
 
-  storeTransaction(trans, dir);
+  // store some transactions
+  Transaction[] expected = [
+    Transaction(125.25 , "credit"  , "store"   , Date(2015 , 1 , 22)) ,
+    Transaction(105.25 , "debit"   , "store"   , Date(2015 , 1 , 25)) ,
+    Transaction(500.00 , "work"    , "savings" , Date(2015 , 2 , 2))  ,
+    Transaction(125.25 , "savings" , "credit"  , Date(2015 , 2 , 5))  ,
+  ];
+  foreach(trans ; expected) {
+    trans.storeTransaction(dir);
+  }
+
+  auto actual = loadTransactions(Date(2015, 1, 10), Date(2015, 2, 10), dir);
+  assert(actual.length == expected.length && actual.all!(x => expected.canFind(x)));
 }
 
 private:

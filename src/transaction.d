@@ -6,6 +6,14 @@ import jsonizer;
 struct Transaction {
   mixin JsonizeMe;
 
+  this(float amount, string source, string dest, Date date, string note = "") {
+    this.amount = amount;
+    this.source = source;
+    this.dest   = dest;
+    this.date   = date;
+    this.note   = note;
+  }
+
   @jsonize {
     float  amount; /// quantity of money that flowed
     string source; /// source the money flows out of
