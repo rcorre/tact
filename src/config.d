@@ -22,11 +22,15 @@ enum defaultKeywords = [
 
 struct Config {
   /// directory where transaction records should be stored
-  string storageDir;
+  private string _storageDir;
+  @property string storageDir() {
+    assert(_storageDir !is null, "null storage directory");
+    return _storageDir.expandTilde;
+  }
   CommandKeyword[string] keywords;
 
   this(Ini ini) {
-    storageDir = ini.keys.get("storageDir", defaultStorageDir);
+    _storageDir = ini.keys.get("storageDir", defaultStorageDir);
 
     // replace default keywords from config entries
     keywords = defaultKeywords;
@@ -48,13 +52,13 @@ struct Config {
   static Config load(string path) {
     Config cfg;
     auto expandedPath = path.expandTilde;
-    
+
     if (expandedPath.exists) {               // load config
       cfg = Config(Ini.Parse(expandedPath));
     }
     else {                                   // default config
-      cfg.storageDir = defaultStorageDir;
-      cfg.keywords = defaultKeywords;
+      cfg._storageDir = defaultStorageDir;
+      cfg.keywords    = defaultKeywords;
     }
 
     return cfg;
@@ -70,6 +74,7 @@ unittest {
   auto cfgDir  = buildPath(tempDir(), "tact_unittest");
   auto cfgPath = buildPath(cfgDir, "tactrc");
   assert(!cfgDir.exists, "unittest failure: " ~ cfgDir ~ " already exists");
+
   cfgDir.mkdirRecurse;
   scope(exit) {
     if (cfgDir.exists) {
@@ -90,7 +95,7 @@ unittest {
   cfgPath.write(cfgText.text);
 
   auto cfg = Config.load(cfgPath);
-  assert(cfg.storageDir == "~/my_custom_dir/tact");
+  assert(cfg.storageDir == "~/my_custom_dir/tact".expandTilde);
 
   auto expectedKeywords           = defaultKeywords;
   expectedKeywords["price"]       = CommandKeyword.amount;

@@ -1,5 +1,7 @@
 import std.stdio;
 import config;
+import storage;
+import command;
 import interpreter;
 
 version (Windows) {
@@ -10,8 +12,19 @@ else {
 }
 
 void main(string[] args) {
-  bool foundConfig;
+  // load config file, or use default config if not available
   auto cfg = Config.load(configPath);
-  writeln(cfg.storageDir);
-  //interpretCommand(args); // strip executable name
+
+  // parse input and execute command
+  auto input = args[1 .. $]; // strip executable name
+  auto cmdType = args[1 .. $].commandType(cfg);
+
+  final switch (cmdType) with (CommandType) {
+    case create:
+      auto trans = input.parseTransaction(cfg);
+      storeTransaction(trans, cfg.storageDir);
+      break;
+    case query:
+      assert(0, "not supported");
+  }
 }
