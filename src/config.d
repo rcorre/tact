@@ -13,17 +13,17 @@ else {
 
 /// keywords used to identify transaction and query parameters
 enum defaultKeywords = [
-  CommandKeyword.amount    : "amount", /// the quantity of money in a transaction
-  CommandKeyword.source    : "from",   /// the source (sender) of a transaction
-  CommandKeyword.dest      : "to",     /// the destination (recipient) of a transaction
-  CommandKeyword.date      : "on",     /// to date on which a transaction occured
-  CommandKeyword.note      : "note",   /// a note about the transaction
+  "amount" : CommandKeyword.amount, /// the quantity of money in a transaction
+  "from"   : CommandKeyword.source, /// the source (sender) of a transaction
+  "to"     : CommandKeyword.dest,   /// the destination (recipient) of a transaction
+  "on"     : CommandKeyword.date,   /// to date on which a transaction occured
+  "for"    : CommandKeyword.note,   /// a note about the transaction
 ];
 
 struct Config {
   /// directory where transaction records should be stored
   string storageDir;
-  string[CommandKeyword] keywords;
+  CommandKeyword[string] keywords;
 
   this(Ini ini) {
     storageDir = ini.keys.get("storageDir", defaultStorageDir);
@@ -35,7 +35,7 @@ struct Config {
       foreach(key, val ; keywordSection.keys) {
         try {
           auto keyword = key.to!CommandKeyword;
-          keywords[keyword] = val;
+          keywords[val] = keyword;
         }
         catch {
           enforce(0, key ~ " is not a known tact keyword");
@@ -48,7 +48,6 @@ struct Config {
   static Config load(string path) {
     Config cfg;
     auto expandedPath = path.expandTilde;
-
     
     if (expandedPath.exists) {               // load config
       cfg = Config(Ini.Parse(expandedPath));
@@ -93,10 +92,10 @@ unittest {
   auto cfg = Config.load(cfgPath);
   assert(cfg.storageDir == "~/my_custom_dir/tact");
 
-  auto expectedKeywords = defaultKeywords;
-  expectedKeywords[CommandKeyword.amount] = "price";
-  expectedKeywords[CommandKeyword.date  ] = "date";
-  expectedKeywords[CommandKeyword.note  ] = "description";
+  auto expectedKeywords           = defaultKeywords;
+  expectedKeywords["price"]       = CommandKeyword.amount;
+  expectedKeywords["date"]        = CommandKeyword.date;
+  expectedKeywords["description"] = CommandKeyword.note;
 
   assert(cfg.keywords == expectedKeywords);
 }
