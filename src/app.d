@@ -17,7 +17,7 @@ void main(string[] args) {
 
   // parse input and execute command
   auto input = args[1 .. $]; // strip executable name
-  auto cmdType = args[1 .. $].commandType(cfg);
+  auto cmdType = input.commandType(cfg);
 
   final switch (cmdType) with (CommandType) {
     case create:
