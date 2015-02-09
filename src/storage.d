@@ -7,6 +7,7 @@ import std.conv;
 import std.range;
 import std.string;
 import std.datetime;
+import std.exception;
 import std.algorithm;
 import config;
 import jsonizer;
@@ -34,6 +35,7 @@ void storeTransaction(Transaction newTransaction, string storageDir) {
 }
 
 auto loadTransactions(Date startDate, Date endDate, string storageDir) {
+  if (!storageDir.exists) { return cast(Transaction[]) []; }
   return
     datesToPaths(startDate, endDate, storageDir) // for all paths covering date range
     .map!(file => file.readJSON!(Transaction[])) // extract transaction data
