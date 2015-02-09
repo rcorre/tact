@@ -3,6 +3,7 @@ module storage;
 
 import std.file;
 import std.path;
+import std.conv;
 import std.range;
 import std.string;
 import std.datetime;
@@ -70,29 +71,27 @@ string dateToPath(Date date, string storageDir) {
   return pathFormat.format(storageDir, date.year, date.month);
 }
 
+/// return the date corresponding to a path of form .../year/month.json
+Date pathToDate(string path) {
+  int month = path.baseName(".json").to!int;
+  int year  = path.dirName.baseName.to!int;
+  return Date(year, month, 1);
+}
+
 unittest {
   auto date       = Date(2015, 5, 1);
   auto storageDir = "~/.tact";
-  assert(dateToPath(date, storageDir) == "~/.tact/2015/5.json");
+  assert(date.dateToPath(storageDir) == "~/.tact/2015/5.json");
+  assert(date.dateToPath(storageDir).pathToDate == date);
 }
 
+// return all storage paths that might contain transactions in the given date range
 auto datesToPaths(Date start, Date end, string storageDir) {
-  // find every month/year combo to cover all dates between start and end
-  return start
-    .recurrence!((a,n) => a[n - 1].add!"months"(1)) // enumerate months from start
-    .until!(date => date >= end.endOfMonth)         // up through end month/year
-    .map!(date => dateToPath(date, storageDir));    // and map to paths
-}
-
-unittest {
-  enum storageDir = "~/.tact";
-  auto start = Date(2014, 11, 14);
-  auto end   = Date(2015,  2, 6);
-  enum expected = [
-    "~/.tact/2014/11.json",
-    "~/.tact/2014/12.json",
-    "~/.tact/2015/1.json",
-    "~/.tact/2015/2.json",
-  ];
-  assert(datesToPaths(start, end, storageDir).equal(expected));
+  // move start to start of month, end to end of month to capture all days in month range
+  start.day = 1;
+  end = end.endOfMonth;
+  auto interval = Interval!Date(start, end);
+  return storageDir
+    .dirEntries("*.json", SpanMode.depth)
+    .filter!(entry => interval.contains(entry.name.pathToDate));
 }
