@@ -1,8 +1,13 @@
 module interpreter;
 
-import std.conv, std.range, std.datetime, std.exception;
+import std.conv; 
+import std.range; 
+import std.array;
+import std.datetime; 
+import std.exception;
 import config;
 import command;
+import query;
 import transaction;
 
 /// determine the type of command represented by the given input `args`
@@ -34,9 +39,6 @@ Transaction parseTransaction(string[] args, Config cfg) {
     enforce(keyword in cfg.keywords, keyword ~ " is not a known keyword");
 
     final switch (cfg.keywords[keyword]) with (CommandKeyword) {
-      case amount:
-        trans.amount = value.to!float;
-        break;
       case source:
         trans.source = value;
         break;
@@ -49,10 +51,69 @@ Transaction parseTransaction(string[] args, Config cfg) {
       case note:
         trans.note = value;
         break;
+      case query:
+      case amount:
+        enforce(0, keyword ~ " is not a valid keyword for a transaction command");
+        break;
     }
   }
 
   return trans;
+}
+
+Query parseQuery(string[] args, Config cfg) {
+  Query query;
+  foreach(pair ; args.drop(1).chunks(2)) {
+    string keyword = pair[0];
+    string value   = pair[1];
+
+    // try to reference provided keyword to a instruction defined in the config
+    enforce(keyword in cfg.keywords, keyword ~ " is not a known keyword");
+
+    final switch (cfg.keywords[keyword]) with (CommandKeyword) {
+      case amount:
+        break;
+      case source:
+        break;
+      case dest:
+        break;
+      case date:
+        break;
+      case note:
+        break;
+      case query: // already handled to trigger query command
+        enforce(0, "duplicate keyword " ~ keyword ~ " in query command");
+        break;
+    }
+  }
+  return query;
+}
+
+private:
+/// split an argument representing a range into an array containing the range values 
+T[] splitRange(T, alias convert)(string str, Config cfg) if (is(typeof(convert(string.init)) : T)) {
+  return str
+    .splitter(cfg.rangeDelimiter) // split on range delimiter
+    .map!(x => convert(x))        // apply provided conversion function to each element
+    .array;                       // return as array
+}
+
+unittest {
+  Config cfg; // default config
+  assert(cfg.rangeDelimiter == "-", "unexpected default range delimiter in unittest");
+
+  auto r1 = "125".splitRange!(int, s => s.to!int)(cfg);
+  auto r2 = "125-250".splitRange!(int, s => s.to!int)(cfg);
+  assert(r1.length == 1 && r1[0] == 125); 
+  assert(r2.length == 2 && r2[0] == 125 && r2[1] == 250); 
+
+  // try a custom delimiter
+  cfg.rangeDelimiter = ",";
+
+  r1 = "125".splitRange!(int, s => s.to!int)(cfg);
+  r2 = "125,250".splitRange!(int, s => s.to!int)(cfg);
+  assert(r1.length == 1 && r1[0] == 125); 
+  assert(r2.length == 2 && r2[0] == 125 && r2[1] == 250); 
 }
 
 /// parse a simple transaction
@@ -88,4 +149,14 @@ unittest {
   assert(trans.dest   == "store");
   assert(trans.date   == Date(2015, 8, 4));
   assert(trans.note   == "stuff");
+}
+
+/// parse a query
+unittest {
+  // test with default config and some mock arguments
+  auto cfg = Config.load("nonexistantpath");
+  auto args = [ "list" ]; // just list everythign
+
+  // check command type
+  assert(args.commandType(cfg) == CommandType.query);
 }
