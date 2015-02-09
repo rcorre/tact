@@ -9,9 +9,11 @@ enum CommandType {
 
 /// keywords used to identify transaction and query parameters
 enum CommandKeyword {
-  amount, /// the quantity of money in a transaction
   source, /// the source (sender) of a transaction
   dest  , /// the destination (recipient) of a transaction
   date  , /// to date on which a transaction occured
   note  , /// a note about the transaction
+  // query-only keywords
+  query , /// indicate that a query is requested
+  amount, /// the quantity of money in a transaction
 }

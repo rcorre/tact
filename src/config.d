@@ -11,8 +11,11 @@ else {
   private enum defaultStorageDir = "~/.tact";
 }
 
+enum defaultRangeDelimiter = ",";
+
 /// keywords used to identify transaction and query parameters
 enum defaultKeywords = [
+  "list"   : CommandKeyword.query,  /// the quantity of money in a transaction
   "amount" : CommandKeyword.amount, /// the quantity of money in a transaction
   "from"   : CommandKeyword.source, /// the source (sender) of a transaction
   "to"     : CommandKeyword.dest,   /// the destination (recipient) of a transaction
@@ -22,15 +25,20 @@ enum defaultKeywords = [
 
 struct Config {
   /// directory where transaction records should be stored
-  private string _storageDir;
+  private string _storageDir = defaultStorageDir;
   @property string storageDir() {
     assert(_storageDir !is null, "null storage directory");
     return _storageDir.expandTilde;
   }
+
+  /// keywords used to identify CLI parameters
   CommandKeyword[string] keywords;
+  /// token used to separate min/max values in query arguments
+  string rangeDelimiter = defaultRangeDelimiter;
 
   this(Ini ini) {
-    _storageDir = ini.keys.get("storageDir", defaultStorageDir);
+    _storageDir    = ini.keys.get("storageDir", defaultStorageDir);
+    rangeDelimiter = ini.keys.get("rangeDelimiter", defaultRangeDelimiter);
 
     // replace default keywords from config entries
     keywords = defaultKeywords;
