@@ -25,6 +25,12 @@ void main(string[] args) {
       storeTransaction(trans, cfg.storageDir);
       break;
     case query:
-      assert(0, "not supported");
+      auto query        = input.parseQuery(cfg);
+      auto transactions = loadTransactions(query.minDate, query.maxDate, cfg.storageDir);
+      auto results      = query.filter(transactions);
+      foreach(res ; results) {
+        writeln(res);
+      }
+      break;
   }
 }
