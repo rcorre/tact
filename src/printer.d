@@ -16,7 +16,9 @@ string makeTable(R)(R transactions, string[] fields)
   auto widths =  columns.map!(col => col.columnWidth);
 
   auto header = fields
-    .map!(field => columnHeader(field))
+    .map!(field  => columnHeader(field))
+    .zip(widths)
+    .map!(pair => pair[0].center(pair[1]))
     .joiner(" | ")
     .to!string;
 
@@ -116,10 +118,25 @@ unittest {
 
 /// printTransactions
 unittest {
+  import std.conv : to;
+  import std.algorithm : joiner;
   enum transactions = [
     Transaction(125.25 , "credit"  , "store"   , Date(2015 , 1 , 22)) , // 0
     Transaction(105.25 , "debit"   , "store"   , Date(2015 , 1 , 25)) , // 1
+    Transaction(500.00 , "work"    , "savings" , Date(2015 , 2 , 2))  , // 2
   ];
 
-  assert(transactions.makeTable(["amount"]) == "Amount\n125.25\n105.25");
+  assert(transactions.makeTable(["amount", "source", "date"]) == [
+    "Amount | Source |    Date   ", 
+    "125.25 | credit | 2015-01-22",
+    "105.25 |  debit | 2015-01-25",
+    "500.00 |   work | 2015-02-02",
+  ].joiner("\n").to!string);
+
+  assert(transactions.makeTable(["date", "amount", "dest"]) == [
+    "   Date    | Amount |  Dest  ", 
+    "2015-01-22 | 125.25 |   store",
+    "2015-01-25 | 105.25 |   store",
+    "2015-02-02 | 500.00 | savings",
+  ].joiner("\n").to!string);
 }
