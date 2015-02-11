@@ -1,3 +1,4 @@
+/// present groups of transactions in an easily readable tabular format
 module printer;
 
 import std.conv; 
@@ -8,6 +9,11 @@ import std.datetime;
 import std.algorithm; 
 import transaction;
 
+/// build a readable string table containing the given `fields` of `transactions`.
+/// Params:
+///   transactions = transactions to include in table
+///   fields = names of transaction fields to include, in order
+/// Returns: a string table with a column for each field and row for each transaction
 string makeTable(R)(R transactions, string[] fields)
   if (isInputRange!R && is(ElementType!R : Transaction))
 {

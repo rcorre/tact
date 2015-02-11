@@ -2,6 +2,7 @@ import std.stdio;
 import config;
 import storage;
 import command;
+import printer;
 import interpreter;
 
 version (Windows) {
@@ -28,9 +29,7 @@ void main(string[] args) {
       auto query        = input.parseQuery(cfg);
       auto transactions = loadTransactions(query.minDate, query.maxDate, cfg.storageDir);
       auto results      = query.filter(transactions);
-      foreach(res ; results) {
-        writeln(res);
-      }
+      writeln(results.makeTable(["date", "source", "dest", "amount", "note" ]));
       break;
   }
 }
