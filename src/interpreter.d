@@ -1,9 +1,9 @@
 module interpreter;
 
-import std.conv; 
-import std.range; 
+import std.conv;
+import std.range;
 import std.array;
-import std.datetime; 
+import std.datetime;
 import std.exception;
 import config;
 import command;
@@ -98,10 +98,10 @@ private:
 /// assign `min` and `max` based on a `input`, which may represent a range of values
 /// if `input` is a single value, assign `convert(input)` to `min` and `max`
 /// if `input` is a range, split it and assign the first part to `min`, the second part to `max`
-void assignMinMax(alias convert, T)(string input, Config cfg, out T min, out T max) 
-  if (is(typeof(convert(string.init)) : T)) 
+void assignMinMax(alias convert, T)(string input, Config cfg, out T min, out T max)
+  if (is(typeof(convert(string.init)) : T))
 {
-  auto vals = input.splitRange!(T, convert)(cfg);
+  auto vals = input.splitRange!(T, convert)(cfg.rangeDelimiter);
   switch(vals.length) {
     case 1: // only one value, use as both min and max (exact range)
       min = max = vals[0];
@@ -115,31 +115,27 @@ void assignMinMax(alias convert, T)(string input, Config cfg, out T min, out T m
   }
 }
 
-/// split an argument representing a range into an array containing the range values 
-T[] splitRange(T, alias convert)(string str, Config cfg) if (is(typeof(convert(string.init)) : T)) {
+/// split an argument representing a range into an array containing the range values
+T[] splitRange(T, alias convert)(string str, string delimiter)
+  if (is(typeof(convert(string.init)) : T))
+{
   return str
-    .splitter(cfg.rangeDelimiter) // split on range delimiter
-    .map!(x => convert(x))        // apply provided conversion function to each element
-    .array;                       // return as array
+    .splitter(delimiter)   // split on range delimiter
+    .map!(x => convert(x)) // apply provided conversion function to each element
+    .array;                // return as array
 }
 
 /// splitRange
 unittest {
-  Config cfg; // default config
-  assert(cfg.rangeDelimiter == ",", "unexpected default range delimiter in unittest");
+  auto r1 = "125".splitRange!(int, s => s.to!int)("-");
+  auto r2 = "125-250".splitRange!(int, s => s.to!int)("-");
+  assert(r1.length == 1 && r1[0] == 125);
+  assert(r2.length == 2 && r2[0] == 125 && r2[1] == 250);
 
-  auto r1 = "125".splitRange!(int, s => s.to!int)(cfg);
-  auto r2 = "125,250".splitRange!(int, s => s.to!int)(cfg);
-  assert(r1.length == 1 && r1[0] == 125); 
-  assert(r2.length == 2 && r2[0] == 125 && r2[1] == 250); 
-
-  // try a custom delimiter
-  cfg.rangeDelimiter = ";";
-
-  r1 = "125".splitRange!(int, s => s.to!int)(cfg);
-  r2 = "125;250".splitRange!(int, s => s.to!int)(cfg);
-  assert(r1.length == 1 && r1[0] == 125); 
-  assert(r2.length == 2 && r2[0] == 125 && r2[1] == 250); 
+  r1 = "125".splitRange!(int, s => s.to!int)("..");
+  r2 = "125..250".splitRange!(int, s => s.to!int)("..");
+  assert(r1.length == 1 && r1[0] == 125);
+  assert(r2.length == 2 && r2[0] == 125 && r2[1] == 250);
 }
 
 /// assignMinMax
