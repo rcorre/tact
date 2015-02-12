@@ -1,7 +1,7 @@
 module config;
 
-import std.path, std.file, std.exception;
-import dini;
+import std.conv, std.path, std.file, std.exception;
+import ctini.rtini;
 import command;
 
 version(Windows) {
@@ -45,19 +45,17 @@ struct Config {
     }
   }
 
-  this(Ini ini) {
-    _storageDir     = ini.keys.get("storageDir", defaultStorageDir);
-    _rangeDelimiter = ini.keys.get("rangeDelimiter", defaultRangeDelimiter);
-    _dateFormat     = ini.keys.get("dateFormat", defaultDateFormat);
+  this(IniSection ini) {
+    _storageDir     = ini.general.storageDir!string;
+    _rangeDelimiter = ini.general.rangeDelimiter!string;
+    _dateFormat     = ini.general.dateFormat!string;
 
     // replace default keywords from config entries
     _keywords = defaultKeywords;
-    if (ini.hasSection("keywords")) {
-      auto keywordSection = ini.getSection("keywords");
-      foreach(key, val ; keywordSection.keys) {
+    if ("keywords" in ini.children) {
+      foreach(key, val ; ini.keywords.children) {
         try {
-          auto keyword = key.to!CommandKeyword;
-          _keywords[val] = keyword;
+          _keywords[val.get!string] = key.to!CommandKeyword;
         }
         catch {
           enforce(0, "Error parsing config. " ~ key ~ "is not a known tact keyword");
@@ -72,7 +70,7 @@ struct Config {
     auto expandedPath = path.expandTilde;
 
     if (expandedPath.exists) {               // load config
-      cfg = Config(Ini.Parse(expandedPath));
+      cfg = Config(iniConfig(expandedPath));
     }
     else {                                   // default config
       cfg._storageDir = defaultStorageDir;
@@ -102,14 +100,15 @@ unittest {
 
   // write out a mock config file
   auto cfgText = [
-    "storageDir     = ~/my_custom_dir/tact",
-    "rangeDelimiter = :",
+    "[general]",
+    `storageDir     = "~/my_custom_dir/tact"`,
+    `rangeDelimiter = ":"`,
     `dateFormat     = "%Y-%m-%d"`,
 
     "[keywords]",
-    "amount  = price",
-    "date    = date",
-    "note    = description"
+    `amount  = "price"`,
+    `date    = "date"`,
+    `note    = "description"`
   ].joiner("\n");
 
   cfgPath.write(cfgText.text);
