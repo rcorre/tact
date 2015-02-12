@@ -19,8 +19,8 @@ The note defaults to an empty string if not specified
 Here are a few examples:
 
 ```
-tact 125.25 from credit_card to grocery_store on 2015-01-03 for "food and stuff" 
-tact 300 from savings to credit_card on 2015-01-03
+tact 125.25 from credit_card to grocery_store on 1/3/15 for "food and stuff" 
+tact 300 from savings to credit_card on 1/3/15
 tact 250 from payroll to savings
 ```
 
@@ -50,7 +50,7 @@ The below example query lists all transactions payed from your account named
 a note containing the phrase "grocery".
 
 ```
-tact list amount 100,500 from credit_card on 2015-01-01 for "*grocery*"
+tact list amount 100-500 from credit_card on 1/1/15 for "*grocery*"
 ```
 
 Configuration
@@ -58,21 +58,28 @@ Configuration
 Tact reads custom settings from the file `~/.tactrc`.
 
 Here is an example `.tactrc` containing the default settings:
+Note that all string values **must** be quoted:
 
 ```
-storageDir = "~/.tact"
-rangeDelimiter = ","
+[general]
+storageDir     = "~/.tact"
+rangeDelimiter = "-"
+dateFormat     = "%m/%d/%y"
 
 [keywords]
-amount = amount
-source = from
-dest   = to
-date   = on
-note   = for
-list   = list
+amount = "amount"
+source = "from"
+dest   = "to"
+date   = "on"
+note   = "for"
+list   = "list"
 ```
 
 `storageDir` determines where `tact` will store transaction data files.
+
+`rangeDelimiter` is a string used to separate value ranges in the amount and date query arguments.
+
+`dateFormat` is the format used to parse and print dates. See `man strftime` for format options.
 
 The `keywords` section allows you to override the custom keywords used to
 identify fields in a command. For example, given the following config:
