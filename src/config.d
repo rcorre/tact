@@ -12,7 +12,7 @@ else {
 }
 
 private enum {
-  defaultRangeDelimiter = ",",
+  defaultRangeDelimiter = "-",
   defaultDateFormat     = "%m/%d/%y"
 }
 
@@ -46,9 +46,9 @@ struct Config {
   }
 
   this(IniSection ini) {
-    _storageDir     = ini.general.storageDir!string;
-    _rangeDelimiter = ini.general.rangeDelimiter!string;
-    _dateFormat     = ini.general.dateFormat!string;
+    _storageDir     = get!string(ini.general, "storageDir", defaultStorageDir);
+    _rangeDelimiter = get!string(ini.general, "rangeDelimiter", defaultRangeDelimiter);
+    _dateFormat     = get!string(ini.general, "dateFormat", defaultDateFormat);
 
     // replace default keywords from config entries
     _keywords = defaultKeywords;
@@ -79,6 +79,12 @@ struct Config {
 
     return cfg;
   }
+}
+
+private:
+/// get a value from `section` matching `key`, or `defaultVal` if the key is not found
+T get(T)(IniSection section, string key, T defaultVal) {
+  return (key in section.children) ?  section.get!T(key) : defaultVal;
 }
 
 unittest {

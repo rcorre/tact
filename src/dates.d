@@ -4,6 +4,7 @@ module dates;
 import std.datetime;
 import std.conv : to;
 import std.string : toStringz;
+import std.exception : enforce;
 import core.sys.posix.time;
 
 private enum strftimeBufSize = 64;
@@ -20,8 +21,13 @@ string dateToString(Date date, string format) {
 Date stringToDate(string str, string format) {
   tm time;
   strptime(str.toStringz, format.toStringz, &time);
-  // tm_year is years since 1900, tm_mon starts at 0, tm_day starts at 1
-  return Date(1900 + time.tm_year, time.tm_mon + 1, time.tm_mday);
+  try {
+    // tm_year is years since 1900, tm_mon starts at 0, tm_day starts at 1
+    return Date(1900 + time.tm_year, time.tm_mon + 1, time.tm_mday);
+  }
+  catch {
+    assert(0, str ~ " doesn't match format " ~ format);
+  }
 }
 
 unittest {

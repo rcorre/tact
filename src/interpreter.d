@@ -5,9 +5,10 @@ import std.range;
 import std.array;
 import std.datetime;
 import std.exception;
+import query;
+import dates;
 import config;
 import command;
-import query;
 import transaction;
 
 /// determine the type of command represented by the given input `args`
@@ -46,7 +47,7 @@ Transaction parseTransaction(string[] args, Config cfg) {
         trans.dest = value;
         break;
       case date:
-        trans.date = Date.fromISOExtString(value);
+        trans.date = value.stringToDate(cfg.dateFormat);
         break;
       case note:
         trans.note = value;
@@ -84,7 +85,7 @@ Query parseQuery(string[] args, Config cfg) {
         value.assignMinMax!(x => x.to!float)(cfg, params.minAmount, params.maxAmount);
         break;
       case date:
-        value.assignMinMax!(x => Date.fromISOExtString(x))(cfg, params.minDate, params.maxDate);
+        value.assignMinMax!(x => x.stringToDate(cfg.dateFormat))(cfg, params.minDate, params.maxDate);
         break;
       case query: // should not appear after first argument
         enforce(0, "duplicate keyword " ~ keyword ~ " in params command");
@@ -148,7 +149,7 @@ unittest {
   input.assignMinMax!(x => x.to!float)(cfg, s.minVal, s.maxVal);
   assert(s.minVal == 500.50f && s.maxVal == 500.50f);
 
-  input = "220,500.50";
+  input = "220-500.50";
   input.assignMinMax!(x => x.to!float)(cfg, s.minVal, s.maxVal);
   assert(s.minVal == 220f && s.maxVal == 500.50f);
 }
@@ -174,7 +175,7 @@ unittest {
 unittest {
   // test with default config and some mock arguments
   auto cfg = Config.load("nonexistantpath");
-  auto args = [ "98.25", "to", "store", "on", "2015-08-04", "for", "stuff" ];
+  auto args = [ "98.25", "to", "store", "on", "08/04/15", "for", "stuff" ];
 
   // check command type
   assert(args.commandType(cfg) == CommandType.create);
@@ -183,9 +184,9 @@ unittest {
   auto trans = args.parseTransaction(cfg);
   assert(trans.amount == 98.25f);
   assert(trans.source is null);
-  assert(trans.dest   == "store");
-  assert(trans.date   == Date(2015, 8, 4));
-  assert(trans.note   == "stuff");
+  assert(trans.dest == "store");
+  assert(trans.date == Date(2015, 8, 4));
+  assert(trans.note == "stuff");
 }
 
 /// parse a query
@@ -198,7 +199,7 @@ unittest {
   assert(args.commandType(cfg) == CommandType.query);
   assert(args.parseQuery(cfg) == Query.init); // should be default query
 
-  args = [ "list", "amount", "250,525", "from", "*bank*" , "on", "2015-05-01,2015-05-22"];
+  args = [ "list", "amount", "250-525", "from", "*bank*" , "on", "05/01/15-05/22/15"];
 
   // check command type
   assert(args.commandType(cfg) == CommandType.query);

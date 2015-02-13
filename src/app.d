@@ -29,7 +29,7 @@ void main(string[] args) {
       auto query        = input.parseQuery(cfg);
       auto transactions = loadTransactions(query.minDate, query.maxDate, cfg.storageDir);
       auto results      = query.filter(transactions);
-      writeln(results.makeTable(["date", "source", "dest", "amount", "note" ]));
+      writeln(results.makeTable(["date", "source", "dest", "amount", "note" ], cfg));
       break;
   }
 }
