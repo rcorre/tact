@@ -1,0 +1,12 @@
+_tact() {
+  COMPREPLY=()
+  local opts=`bin/tact _complete ${COMP_CWORD} ${COMP_WORDS[*]}`
+  local cur="${COMP_WORDS[COMP_CWORD]}"
+
+  COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+  return 0
+}
+
+complete -F _tact tact
+
+# vim: set filetype=sh:

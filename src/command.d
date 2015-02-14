@@ -3,8 +3,9 @@ module command;
 
 /// type of action to take
 enum CommandType {
-  create, /// record a new transaction
-  query   /// retrieve information on previous transactions
+  create,  /// record a new transaction
+  query,   /// retrieve information on previous transactions
+  complete /// request for bash completion options
 }
 
 /// keywords used to identify transaction and query parameters
@@ -16,4 +17,6 @@ enum CommandKeyword {
   // query-only keywords
   query , /// indicate that a query is requested
   amount, /// the quantity of money in a transaction
+  // internal keywords
+  complete, /// request bash completion
 }

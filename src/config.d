@@ -18,12 +18,13 @@ private enum {
 
 /// keywords used to identify transaction and query parameters
 enum defaultKeywords = [
-  "list"   : CommandKeyword.query,  /// the quantity of money in a transaction
-  "amount" : CommandKeyword.amount, /// the quantity of money in a transaction
-  "from"   : CommandKeyword.source, /// the source (sender) of a transaction
-  "to"     : CommandKeyword.dest,   /// the destination (recipient) of a transaction
-  "on"     : CommandKeyword.date,   /// to date on which a transaction occured
-  "for"    : CommandKeyword.note,   /// a note about the transaction
+  "list"      : CommandKeyword.query,   /// the quantity of money in a transaction
+  "amount"    : CommandKeyword.amount,  /// the quantity of money in a transaction
+  "from"      : CommandKeyword.source,  /// the source (sender) of a transaction
+  "to"        : CommandKeyword.dest,    /// the destination (recipient) of a transaction
+  "on"        : CommandKeyword.date,    /// to date on which a transaction occured
+  "for"       : CommandKeyword.note,    /// a note about the transaction
+  "_complete" : CommandKeyword.complete /// request bash completion options
 ];
 
 struct Config {

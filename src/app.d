@@ -1,8 +1,10 @@
-import std.stdio;
+import std.conv  : to;
+import std.stdio : writeln;
 import config;
 import storage;
 import command;
 import printer;
+import completion;
 import interpreter;
 
 version (Windows) {
@@ -31,5 +33,11 @@ void main(string[] args) {
       auto results      = query.filter(transactions);
       writeln(results.makeTable(["date", "source", "dest", "amount", "note" ], cfg));
       break;
+    case complete:
+      // the args should look like "_complete <cword> bin/tact <args...>"
+      assert(input.length >= 3, "improper arguments provided to completion function");
+      int cword = input[1].to!int;    // cword is first arg after complete
+      string[] words = input[3 .. $]; // strip duplicate executable name
+      writeln(getCompletions(cword, words, cfg));
   }
 }

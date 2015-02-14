@@ -2,9 +2,10 @@ module interpreter;
 
 import std.conv;
 import std.range;
-import std.array;
-import std.datetime;
-import std.exception;
+import std.array     : array;
+import std.string    : isNumeric;
+import std.datetime  : Date, Clock;
+import std.exception : enforce;
 import query;
 import dates;
 import config;
@@ -13,13 +14,21 @@ import transaction;
 
 /// determine the type of command represented by the given input `args`
 CommandType commandType(string[] args, Config cfg) {
-  try {
-    args[0].to!float;
+  string cmd = args[0];
+  if (cmd.isNumeric) {
     return CommandType.create;
   }
-  catch {
-    return CommandType.query;
+  else if (cmd in cfg.keywords) {
+    switch (cfg.keywords[cmd]) with (CommandKeyword) {
+      case query:
+        return CommandType.query;
+      case complete:
+        return CommandType.complete;
+      default:
+    }
   }
+  enforce(0, cmd ~ " is not a known command keyword");
+  assert(0);
 }
 
 /// translate `args` into a transaction using the settings defined by `cfg`
@@ -54,6 +63,7 @@ Transaction parseTransaction(string[] args, Config cfg) {
         break;
       case query:
       case amount:
+      case complete:
         enforce(0, keyword ~ " is not a valid keyword for a transaction command");
         break;
     }
@@ -89,6 +99,9 @@ Query parseQuery(string[] args, Config cfg) {
         break;
       case query: // should not appear after first argument
         enforce(0, "duplicate keyword " ~ keyword ~ " in params command");
+        break;
+      case complete: // should not appear after first argument
+        enforce(0, keyword ~ " is not valid in a query command");
         break;
     }
   }
