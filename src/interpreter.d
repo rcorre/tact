@@ -9,7 +9,7 @@ import std.exception : enforce;
 import query;
 import dates;
 import config;
-import command;
+import keywords;
 import transaction;
 
 /// determine the type of command represented by the given input `args`
@@ -18,14 +18,8 @@ CommandType commandType(string[] args, Config cfg) {
   if (cmd.isNumeric) {
     return CommandType.create;
   }
-  else if (cmd in cfg.keywords) {
-    switch (cfg.keywords[cmd]) with (CommandKeyword) {
-      case query:
-        return CommandType.query;
-      case complete:
-        return CommandType.complete;
-      default:
-    }
+  else if (cmd in cfg.cmdKeywords) {
+    return cfg.cmdKeywords[cmd];
   }
   enforce(0, cmd ~ " is not a known command keyword");
   assert(0);
@@ -46,9 +40,9 @@ Transaction parseTransaction(string[] args, Config cfg) {
     string value   = pair[1];
 
     // try to reference provided keyword to a instruction defined in the config
-    enforce(keyword in cfg.keywords, keyword ~ " is not a known keyword");
+    enforce(keyword in cfg.argKeywords, keyword ~ " is not a known keyword");
 
-    final switch (cfg.keywords[keyword]) with (CommandKeyword) {
+    final switch (cfg.argKeywords[keyword]) with (ArgKeyword) {
       case source:
         trans.source = value;
         break;
@@ -61,10 +55,11 @@ Transaction parseTransaction(string[] args, Config cfg) {
       case note:
         trans.note = value;
         break;
-      case query:
       case amount:
-      case complete:
-        enforce(0, keyword ~ " is not a valid keyword for a transaction command");
+        enforce(0, "amount should be specified as the first argument when creating a transaction");
+        break;
+      case invalid:
+        enforce(0, "");
         break;
     }
   }
@@ -79,9 +74,9 @@ Query parseQuery(string[] args, Config cfg) {
     string value   = pair[1];
 
     // try to reference provided keyword to a instruction defined in the config
-    enforce(keyword in cfg.keywords, keyword ~ " is not a known keyword");
+    enforce(keyword in cfg.argKeywords, keyword ~ " is not a known keyword");
 
-    final switch (cfg.keywords[keyword]) with (CommandKeyword) {
+    final switch (cfg.argKeywords[keyword]) with (ArgKeyword) {
       case source:
         params.sourceGlob = value;
         break;
@@ -97,11 +92,8 @@ Query parseQuery(string[] args, Config cfg) {
       case date:
         value.assignMinMax!(x => x.stringToDate(cfg.dateFormat))(cfg, params.minDate, params.maxDate);
         break;
-      case query: // should not appear after first argument
-        enforce(0, "duplicate keyword " ~ keyword ~ " in params command");
-        break;
-      case complete: // should not appear after first argument
-        enforce(0, keyword ~ " is not valid in a query command");
+      case invalid:
+        enforce(0, keyword ~ " is not a known keyword");
         break;
     }
   }

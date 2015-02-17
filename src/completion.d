@@ -4,7 +4,7 @@ module completion;
 import std.conv : text;
 import std.algorithm : joiner, filter, canFind;
 import config;
-import command;
+import keywords;
 import interpreter;
 
 /// provide completion options based on CWORD and COMP_WORDS from bash completion script

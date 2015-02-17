@@ -1,9 +1,10 @@
 import std.conv  : to;
 import std.stdio : writeln;
+import std.exception : enforce;
 import config;
 import storage;
-import command;
 import printer;
+import keywords;
 import completion;
 import interpreter;
 
@@ -39,5 +40,9 @@ void main(string[] args) {
       int cword = input[1].to!int;    // cword is first arg after complete
       string[] words = input[3 .. $]; // strip duplicate executable name
       writeln(getCompletions(cword, words, cfg));
+      break;
+    case invalid:
+      writeln("failed to interpret command");
+      break;
   }
 }
