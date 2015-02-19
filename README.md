@@ -57,45 +57,37 @@ Configuration
 -----
 Tact reads custom settings from the file `~/.tactrc`.
 
-Here is an example `.tactrc` containing the default settings:
-Note that all string values **must** be quoted:
+Here is an example `.tactrc`, note that all string values **must** be quoted:
 
 ```
 [general]
-storageDir     = "~/.tact"
-rangeDelimiter = "-"
-dateFormat     = "%m/%d/%y"
+storageDir     = "~/.config/tact"
+rangeDelimiter = ":"
+dateFormat     = "%y/%m/%d"
 
-[keywords]
-amount = "amount"
-source = "from"
-dest   = "to"
-date   = "on"
-note   = "for"
-list   = "list"
+[alias]
+amt  = "amount"
+src  = "from"
+dst  = "to"
+date = "on"
 ```
 
 `storageDir` determines where `tact` will store transaction data files.
+**default: ~/.tact**
+
 
 `rangeDelimiter` is a string used to separate value ranges in the amount and date query arguments.
+For example, if `rangeDelimiter` = `,`, then the query argument `amount 100,300` would include
+transactions whose amounts fall between 100 and 300.
+**default: -**
+
 
 `dateFormat` is the format used to parse and print dates. See `man strftime` for format options.
+**default: %m/%d/%y**
 
-The `keywords` section allows you to override the custom keywords used to
-identify fields in a command. For example, given the following config:
 
-```
-[keywords]
-source = src
-dest   = dst
-date   = dt
-```
-
-a command might look like:
-
-```
-tact 125 src credit_card dst some_shop dt 2014-06-22
-```
+The `alias` section allows you to define your own keywords to use.
+The left side of an alias entry is your keyword, the right side is the default keyword it maps to.
 
 Storage
 -----
