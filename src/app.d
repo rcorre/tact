@@ -21,7 +21,7 @@ void main(string[] args) {
 
   // parse input and execute command
   auto input = args[1 .. $]; // strip executable name
-  auto opType = input.commandType(cfg);
+  auto opType = parseOperationKeyword(input[0], cfg.aliases);
 
   final switch (opType) with (OperationType) {
     case create:
@@ -40,9 +40,6 @@ void main(string[] args) {
       int cword = input[1].to!int;    // cword is first arg after complete
       string[] words = input[3 .. $]; // strip duplicate executable name
       writeln(getCompletions(cword, words, cfg));
-      break;
-    case invalid:
-      writeln("failed to interpret command");
       break;
   }
 }

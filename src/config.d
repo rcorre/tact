@@ -37,13 +37,13 @@ struct Config {
     string _rangeDelimiter = defaultRangeDelimiter; /// token to separate min/max args in query
     string _dateFormat     = defaultDateFormat;     /// format used to parse and format dates
     string _storageDir     = defaultStorageDir;     /// directory where transactions are stored
-    ParameterType[string] _parameterKeywords;             /// map string keyword to argument type
-    OperationType[string] _operationKeywords;             /// map string keyword to command type
+    string[string] _aliases;
   }
 
   @property {
-    string rangeDelimiter()             { return _rangeDelimiter; }
-    string dateFormat()                 { return _dateFormat; }
+    string[string] aliases() { return _aliases; }
+    string dateFormat()      { return _dateFormat; }
+    string rangeDelimiter()  { return _rangeDelimiter; }
 
     string storageDir() {
       assert(_storageDir !is null, "null storage directory");
@@ -56,24 +56,10 @@ struct Config {
     _rangeDelimiter = get!string(ini.general, "rangeDelimiter", defaultRangeDelimiter);
     _dateFormat     = get!string(ini.general, "dateFormat", defaultDateFormat);
 
-    // replace default keywords from config entries
-    _operationKeywords = defaultOperationKeywords;
-    _parameterKeywords = defaultParameterKeywords;
-    if ("keywords" in ini.children) {
-      foreach(key, val ; ini.keywords.children) {
-        string name = val.get!string;
-        OperationType cmdType;
-        ParameterType  argType;
-        // first try to set a command keyword
-        if ((cmdType = key.parseKeywordType!OperationType) != OperationType.invalid) {
-          _operationKeywords[name] = cmdType;
-        }
-        else if ((argType = key.parseKeywordType!ParameterType) != ParameterType.invalid) {
-          _parameterKeywords[name] = argType;
-        }
-        else {
-          enforce(0, "Error parsing config. " ~ key ~ "is not a known tact keyword");
-        }
+    auto aliasSection = "alias" in ini.children;
+    if (aliasSection !is null) {
+      foreach(key, val ; aliasSection.get!IniSection.children) {
+        _aliases[key] = val.get!string;
       }
     }
   }
@@ -86,26 +72,8 @@ struct Config {
     if (expandedPath.exists) {               // load config
       cfg = Config(iniConfig(expandedPath));
     }
-    else {                                   // default config
-      cfg._operationKeywords = defaultOperationKeywords;
-      cfg._parameterKeywords = defaultParameterKeywords;
-    }
 
     return cfg;
-  }
-
-  /// translate the given string `keyword` in the corresponding operation
-  /// uses the user config to look for custom keywords
-  /// returns `OperationType.invalid` if no match is found
-  OperationType parseOperationKeyword(string keyword) {
-    return keyword.parseKeyword!OperationType(_operationKeywords);
-  }
-
-  /// translate the given string `keyword` in the corresponding parameter
-  /// uses the user config to look for custom keywords
-  /// returns `ParameterType.invalid` if no match is found
-  ParameterType parseParameterKeyword(string keyword) {
-    return keyword.parseKeyword!ParameterType(_parameterKeywords);
   }
 }
 
@@ -139,11 +107,11 @@ unittest {
     `rangeDelimiter = ":"`,
     `dateFormat     = "%Y-%m-%d"`,
 
-    "[keywords]",
-    `amount = "price"`,
-    `date   = "date"`,
-    `note   = "description"`
-    `query  = "show"`
+    "[alias]",
+    `price       = "amount"`,
+    `date        = "on"`,
+    `description = "note"`,
+    `show        = "list"`
   ].joiner("\n");
 
   cfgPath.write(cfgText.text);
@@ -155,13 +123,9 @@ unittest {
   assert(cfg.dateFormat == "%Y-%m-%d");
   assert(cfg.rangeDelimiter == ":");
 
-  // custom keywords
-  assert(cfg.parseParameterKeyword("price")       == ParameterType.amount);
-  assert(cfg.parseParameterKeyword("date")        == ParameterType.date);
-  //assert(cfg.parseParameterKeyword("description") == ParameterType.note);
-  //assert(cfg.parseOperationKeyword("show")        == OperationType.query);
-
-  // default keywords
-  assert(cfg.parseParameterKeyword("from") == ParameterType.source);
-  assert(cfg.parseOperationKeyword("list") == OperationType.query);
+  // custom aliases
+  assert(cfg.aliases["price"]       == "amount");
+  assert(cfg.aliases["date"]        == "on");
+  assert(cfg.aliases["description"] == "note");
+  assert(cfg.aliases["show"]        == "list");
 }

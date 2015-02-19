@@ -1,11 +1,8 @@
 /// manage keywords used on cli
 module keywords;
 
-import std.conv : to;
-
 /// type of action to take
 enum OperationType {
-  invalid , /// indicates failure to identify command type
   create  , /// record a new transaction
   query   , /// retrieve information on previous transactions
   complete  /// request for bash completion options
@@ -13,7 +10,6 @@ enum OperationType {
 
 /// keywords used to identify transaction and query parameters
 enum ParameterType {
-  invalid , /// indicates failure to identify argument type
   source  , /// the source (sender) of a transaction
   dest    , /// the destination (recipient) of a transaction
   date    , /// to date on which a transaction occured
@@ -21,37 +17,70 @@ enum ParameterType {
   amount  , /// the quantity of money in a transaction
 }
 
-T parseKeyword(T)(string keyword, T[string] keywordMap) if (is(T == enum)) {
-  return keywordMap.get(keyword, T.init);
-}
+private enum operationKeywords = [
+  "add"        : OperationType.create,
+  "list"       : OperationType.query,
+   "_complete" : OperationType.complete,
+];
 
-T parseKeywordType(T)(string key) if (is(T == enum)) {
-  try {
-    return key.to!T;
+private enum parameterKeywords = [
+  "from"   : ParameterType.source,
+  "to"     : ParameterType.dest,
+  "on"     : ParameterType.date,
+  "for"    : ParameterType.note,
+  "amount" : ParameterType.amount,
+];
+
+/// thrown when a keyword input at the CLI cannot be translated
+class KeywordException : Exception {
+  /// construct an exception from the invalid keyword `input`
+  this(string input) {
+    string msg = input ~ " is not a known keyword";
+    super(msg);
   }
-  catch {
-    return mixin(T.stringof ~ ".invalid");
+}
+
+OperationType parseOperationKeyword(string input, string[string] aliases) {
+  return parseKeyword!OperationType(input, aliases, operationKeywords);
+}
+
+ParameterType parseParameterKeyword(string input, string[string] aliases) {
+  return parseKeyword!ParameterType(input, aliases, parameterKeywords);
+}
+
+private:
+T parseKeyword(T)(string input, string[string] aliases, const T[string] lookup) if (is(T == enum)) {
+  input = aliases.get(input, input); // replace input with alias if present
+  auto val = input in lookup;        // look up keyword after alias translation
+  if (val is null) {
+    throw new KeywordException(input);
   }
+  return *val;
 }
 
-/// `parseKeywordType`
+/// `parseOperationKeyword` and `parseParameterKeyword`
 unittest {
-  assert("create".parseKeywordType!OperationType    == OperationType.create);
-  assert("query".parseKeywordType!OperationType     == OperationType.query);
-  assert("nonesense".parseKeywordType!OperationType == OperationType.invalid);
-}
+  import std.exception : assertThrown;
 
-/// `parseKeyword`
-unittest {
-  enum map = [
-    "add"       : OperationType.create,
-    "list"      : OperationType.query,
-    "_complete" : OperationType.complete,
+  enum opAlias = [
+    "new"   : "add",
+    "query" : "list",
   ];
 
-  assert("add".parseKeyword!OperationType(map)       == OperationType.create);
-  assert("list".parseKeyword!OperationType(map)      == OperationType.query);
-  assert("_complete".parseKeyword!OperationType(map) == OperationType.complete);
-  assert("nope".parseKeyword!OperationType(map)      == OperationType.invalid);
-}
+  enum cmdAlias = [
+    "amt"   : "amount"
+  ];
 
+  assert("add".parseOperationKeyword(opAlias)       == OperationType.create);
+  assert("new".parseOperationKeyword(opAlias)       == OperationType.create);
+  assert("list".parseOperationKeyword(opAlias)      == OperationType.query);
+  assert("query".parseOperationKeyword(opAlias)     == OperationType.query);
+  assert("_complete".parseOperationKeyword(opAlias) == OperationType.complete);
+
+  assert("amt".parseParameterKeyword(cmdAlias)    == ParameterType.amount);
+  assert("amount".parseParameterKeyword(cmdAlias) == ParameterType.amount);
+  assert("from".parseParameterKeyword(cmdAlias)   == ParameterType.source);
+
+  assertThrown!KeywordException("nope".parseOperationKeyword(opAlias));
+  assertThrown!KeywordException("nope".parseParameterKeyword(opAlias));
+}

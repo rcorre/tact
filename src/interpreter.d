@@ -18,7 +18,7 @@ OperationType operationType(string[] args, Config cfg) {
   if (op.isNumeric) {
     return OperationType.create;
   }
-  return cfg.parseOperationKeyword(op);
+  return parseOperationKeyword(op, cfg.aliases);
 }
 
 /// translate `args` into a transaction using the settings defined by `cfg`
@@ -27,16 +27,22 @@ Transaction parseTransaction(string[] args, Config cfg) {
 
   // default construct transaction
   Transaction trans;
-  trans.amount = args[0].to!float;          // amount is leading numeric value
+
+  // if first arg is a number, use that to set transaction amount
+  if (args[0].isNumeric) {
+    trans.amount = args[0].to!float;
+    args = args[1 .. $];
+  }
+
   trans.date   = cast(Date) Clock.currTime; // default date to today
 
   // populate transaction fields from remaining args, which come in keyword/value pairs
-  foreach(pair ; args.drop(1).chunks(2)) {
+  foreach(pair ; args.chunks(2)) {
     string keyword = pair[0];
     string value   = pair[1];
 
     // try to reference provided keyword to a instruction defined in the config
-    final switch (cfg.parseParameterKeyword(keyword)) with (ParameterType) {
+    final switch (parseParameterKeyword(keyword, cfg.aliases)) with (ParameterType) {
       case source:
         trans.source = value;
         break;
@@ -50,10 +56,7 @@ Transaction parseTransaction(string[] args, Config cfg) {
         trans.note = value;
         break;
       case amount:
-        enforce(0, "amount should be specified as the first argument when creating a transaction");
-        break;
-      case invalid:
-        enforce(0, "");
+        trans.amount = value.to!float;
         break;
     }
   }
@@ -67,7 +70,7 @@ Query parseQuery(string[] args, Config cfg) {
     string keyword = pair[0];
     string value   = pair[1];
 
-    final switch (cfg.parseParameterKeyword(keyword)) with (ParameterType) {
+    final switch (parseParameterKeyword(keyword, cfg.aliases)) with (ParameterType) {
       case source:
         params.sourceGlob = value;
         break;
@@ -82,9 +85,6 @@ Query parseQuery(string[] args, Config cfg) {
         break;
       case date:
         value.assignMinMax!(x => x.stringToDate(cfg.dateFormat))(cfg, params.minDate, params.maxDate);
-        break;
-      case invalid:
-        enforce(0, keyword ~ " is not a known keyword");
         break;
     }
   }
