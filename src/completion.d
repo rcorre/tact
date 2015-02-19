@@ -14,8 +14,8 @@ string getCompletions(int cword, string[] words, Config cfg) {
   }
 
   // command given, get options based on command type
-  auto cmdType = words.commandType(cfg);
-  assert(cmdType != CommandType.complete, "nested _complete instruction");
+  auto cmdType = words.operationType(cfg);
+  assert(cmdType != OperationType.complete, "nested _complete instruction");
 
   return keywordOptions(words, cmdType);
 }
@@ -24,9 +24,9 @@ private:
 /// return valid keywords that have not yet been used in the current command
 /// Params:
 ///   words = args that have been typed on the cli so far
-///   cmdType = the type of the current command as identified by `interpreter.commandType(args)`
-string keywordOptions(string[] words, CommandType cmdType) {
-  auto allKeywords = (cmdType == CommandType.create) ?
+///   cmdType = the type of the current command as identified by `interpreter.operationType(args)`
+string keywordOptions(string[] words, OperationType cmdType) {
+  auto allKeywords = (cmdType == OperationType.create) ?
     [ "from", "to", "on", "for" ] :
     [ "from", "to", "on", "for", "amount" ];
 
@@ -42,7 +42,7 @@ unittest {
   import std.algorithm : all, canFind;
   // test helper. given a string of arguments `argString`,
   // return true if the options provided contain all words in `expected` and nothing more
-  bool test(string argString, CommandType cmdType, string expected) {
+  bool test(string argString, OperationType cmdType, string expected) {
     string[] words        = argString.split(" ");
     string[] opts         = keywordOptions(words, cmdType).split(" ");
     string[] expectedOpts = expected.split(" ");
@@ -51,7 +51,7 @@ unittest {
       opts.all!(x => expectedOpts.canFind(x));   // without any unexpected options
   }
 
-  with(CommandType) {
+  with(OperationType) {
     assert(test("100 ", create, "from to on for"));
     assert(test("list ", query, "from to on for amount"));
     assert(test("100 from credit to debit", create, "for on"));

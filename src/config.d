@@ -17,19 +17,19 @@ private enum {
 }
 
 /// keywords used to identify transaction and query parameters
-enum defaultArgKeywords = [
-  "amount"    : ArgKeyword.amount, /// the quantity of money in a transaction
-  "from"      : ArgKeyword.source, /// the source (sender) of a transaction
-  "to"        : ArgKeyword.dest,   /// the destination (recipient) of a transaction
-  "on"        : ArgKeyword.date,   /// to date on which a transaction occured
-  "for"       : ArgKeyword.note,   /// a note about the transaction
+enum defaultParameterKeywords = [
+  "amount"    : ParameterType.amount, /// the quantity of money in a transaction
+  "from"      : ParameterType.source, /// the source (sender) of a transaction
+  "to"        : ParameterType.dest,   /// the destination (recipient) of a transaction
+  "on"        : ParameterType.date,   /// to date on which a transaction occured
+  "for"       : ParameterType.note,   /// a note about the transaction
 ];
 
 /// keywords used to identify command type
-enum defaultCmdKeywords = [
-  "add"       : CommandType.create,   /// create a new transaction
-  "list"      : CommandType.query,    /// list transactions
-  "_complete" : CommandType.complete, /// get bash completion options
+enum defaultOperationKeywords = [
+  "add"       : OperationType.create,   /// create a new transaction
+  "list"      : OperationType.query,    /// list transactions
+  "_complete" : OperationType.complete, /// get bash completion options
 ];
 
 struct Config {
@@ -37,15 +37,13 @@ struct Config {
     string _rangeDelimiter = defaultRangeDelimiter; /// token to separate min/max args in query
     string _dateFormat     = defaultDateFormat;     /// format used to parse and format dates
     string _storageDir     = defaultStorageDir;     /// directory where transactions are stored
-    ArgKeyword[string]  _argKeywords;               /// map string keyword to argument type
-    CommandType[string] _cmdKeywords;               /// map string keyword to command type
+    ParameterType[string] _parameterKeywords;             /// map string keyword to argument type
+    OperationType[string] _operationKeywords;             /// map string keyword to command type
   }
 
   @property {
-    string rangeDelimiter()           { return _rangeDelimiter; }
-    string dateFormat()               { return _dateFormat; }
-    ArgKeyword[string] argKeywords()  { return _argKeywords; }
-    CommandType[string] cmdKeywords() { return _cmdKeywords; }
+    string rangeDelimiter()             { return _rangeDelimiter; }
+    string dateFormat()                 { return _dateFormat; }
 
     string storageDir() {
       assert(_storageDir !is null, "null storage directory");
@@ -59,19 +57,19 @@ struct Config {
     _dateFormat     = get!string(ini.general, "dateFormat", defaultDateFormat);
 
     // replace default keywords from config entries
-    _cmdKeywords = defaultCmdKeywords;
-    _argKeywords = defaultArgKeywords;
+    _operationKeywords = defaultOperationKeywords;
+    _parameterKeywords = defaultParameterKeywords;
     if ("keywords" in ini.children) {
       foreach(key, val ; ini.keywords.children) {
         string name = val.get!string;
-        CommandType cmdType;
-        ArgKeyword  argType;
+        OperationType cmdType;
+        ParameterType  argType;
         // first try to set a command keyword
-        if ((cmdType = key.parseKeywordType!CommandType) != CommandType.invalid) {
-          _cmdKeywords[name] = cmdType;
+        if ((cmdType = key.parseKeywordType!OperationType) != OperationType.invalid) {
+          _operationKeywords[name] = cmdType;
         }
-        else if ((argType = key.parseKeywordType!ArgKeyword) != ArgKeyword.invalid) {
-          _argKeywords[name] = argType;
+        else if ((argType = key.parseKeywordType!ParameterType) != ParameterType.invalid) {
+          _parameterKeywords[name] = argType;
         }
         else {
           enforce(0, "Error parsing config. " ~ key ~ "is not a known tact keyword");
@@ -89,11 +87,25 @@ struct Config {
       cfg = Config(iniConfig(expandedPath));
     }
     else {                                   // default config
-      cfg._cmdKeywords = defaultCmdKeywords;
-      cfg._argKeywords = defaultArgKeywords;
+      cfg._operationKeywords = defaultOperationKeywords;
+      cfg._parameterKeywords = defaultParameterKeywords;
     }
 
     return cfg;
+  }
+
+  /// translate the given string `keyword` in the corresponding operation
+  /// uses the user config to look for custom keywords
+  /// returns `OperationType.invalid` if no match is found
+  OperationType parseOperationKeyword(string keyword) {
+    return keyword.parseKeyword!OperationType(_operationKeywords);
+  }
+
+  /// translate the given string `keyword` in the corresponding parameter
+  /// uses the user config to look for custom keywords
+  /// returns `ParameterType.invalid` if no match is found
+  ParameterType parseParameterKeyword(string keyword) {
+    return keyword.parseKeyword!ParameterType(_parameterKeywords);
   }
 }
 
@@ -128,10 +140,10 @@ unittest {
     `dateFormat     = "%Y-%m-%d"`,
 
     "[keywords]",
-    `amount  = "price"`,
-    `date    = "date"`,
-    `note    = "description"`
-    `query   = "show"`
+    `amount = "price"`,
+    `date   = "date"`,
+    `note   = "description"`
+    `query  = "show"`
   ].joiner("\n");
 
   cfgPath.write(cfgText.text);
@@ -143,17 +155,13 @@ unittest {
   assert(cfg.dateFormat == "%Y-%m-%d");
   assert(cfg.rangeDelimiter == ":");
 
-  // populate expected default keywords
-  auto expectedArgKeywords = defaultArgKeywords;
-  auto expectedCmdKeywords = defaultCmdKeywords;
-  std.stdio.writeln(expectedArgKeywords);
-  std.stdio.writeln(cfg.argKeywords);
-  // set keywords that are expected to differ
-  expectedArgKeywords["price"]       = ArgKeyword.amount;
-  expectedArgKeywords["date"]        = ArgKeyword.date;
-  expectedArgKeywords["description"] = ArgKeyword.note;
-  expectedCmdKeywords["show"]        = CommandType.query;
+  // custom keywords
+  assert(cfg.parseParameterKeyword("price")       == ParameterType.amount);
+  assert(cfg.parseParameterKeyword("date")        == ParameterType.date);
+  //assert(cfg.parseParameterKeyword("description") == ParameterType.note);
+  //assert(cfg.parseOperationKeyword("show")        == OperationType.query);
 
-  assert(cfg.argKeywords == expectedArgKeywords);
-  assert(cfg.cmdKeywords == expectedCmdKeywords);
+  // default keywords
+  assert(cfg.parseParameterKeyword("from") == ParameterType.source);
+  assert(cfg.parseOperationKeyword("list") == OperationType.query);
 }

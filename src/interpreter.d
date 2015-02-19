@@ -13,21 +13,17 @@ import keywords;
 import transaction;
 
 /// determine the type of command represented by the given input `args`
-CommandType commandType(string[] args, Config cfg) {
-  string cmd = args[0];
-  if (cmd.isNumeric) {
-    return CommandType.create;
+OperationType operationType(string[] args, Config cfg) {
+  string op = args[0];
+  if (op.isNumeric) {
+    return OperationType.create;
   }
-  else if (cmd in cfg.cmdKeywords) {
-    return cfg.cmdKeywords[cmd];
-  }
-  enforce(0, cmd ~ " is not a known command keyword");
-  assert(0);
+  return cfg.parseOperationKeyword(op);
 }
 
 /// translate `args` into a transaction using the settings defined by `cfg`
 Transaction parseTransaction(string[] args, Config cfg) {
-  assert(args.commandType(cfg) == CommandType.create, args.to!string ~ " is not a create command");
+  assert(args.operationType(cfg) == OperationType.create, args.to!string ~ " is not a create command");
 
   // default construct transaction
   Transaction trans;
@@ -40,9 +36,7 @@ Transaction parseTransaction(string[] args, Config cfg) {
     string value   = pair[1];
 
     // try to reference provided keyword to a instruction defined in the config
-    enforce(keyword in cfg.argKeywords, keyword ~ " is not a known keyword");
-
-    final switch (cfg.argKeywords[keyword]) with (ArgKeyword) {
+    final switch (cfg.parseParameterKeyword(keyword)) with (ParameterType) {
       case source:
         trans.source = value;
         break;
@@ -73,10 +67,7 @@ Query parseQuery(string[] args, Config cfg) {
     string keyword = pair[0];
     string value   = pair[1];
 
-    // try to reference provided keyword to a instruction defined in the config
-    enforce(keyword in cfg.argKeywords, keyword ~ " is not a known keyword");
-
-    final switch (cfg.argKeywords[keyword]) with (ArgKeyword) {
+    final switch (cfg.parseParameterKeyword(keyword)) with (ParameterType) {
       case source:
         params.sourceGlob = value;
         break;
@@ -166,7 +157,7 @@ unittest {
   auto args = [ "100", "from", "savings", "to", "credit" ];
 
   // check command type
-  assert(args.commandType(cfg) == CommandType.create);
+  assert(args.operationType(cfg) == OperationType.create);
 
   // parse transaction
   auto trans = args.parseTransaction(cfg);
@@ -183,7 +174,7 @@ unittest {
   auto args = [ "98.25", "to", "store", "on", "08/04/15", "for", "stuff" ];
 
   // check command type
-  assert(args.commandType(cfg) == CommandType.create);
+  assert(args.operationType(cfg) == OperationType.create);
 
   // parse transaction
   auto trans = args.parseTransaction(cfg);
@@ -201,13 +192,13 @@ unittest {
   auto args = [ "list" ]; // just list everythign
 
   // check command type
-  assert(args.commandType(cfg) == CommandType.query);
+  assert(args.operationType(cfg) == OperationType.query);
   assert(args.parseQuery(cfg) == Query.init); // should be default query
 
   args = [ "list", "amount", "250-525", "from", "*bank*" , "on", "05/01/15-05/22/15"];
 
   // check command type
-  assert(args.commandType(cfg) == CommandType.query);
+  assert(args.operationType(cfg) == OperationType.query);
   auto query = args.parseQuery(cfg);
   assert(query.minAmount  == 250f);
   assert(query.maxAmount  == 525f);

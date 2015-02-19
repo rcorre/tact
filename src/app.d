@@ -21,9 +21,9 @@ void main(string[] args) {
 
   // parse input and execute command
   auto input = args[1 .. $]; // strip executable name
-  auto cmdType = input.commandType(cfg);
+  auto opType = input.commandType(cfg);
 
-  final switch (cmdType) with (CommandType) {
+  final switch (opType) with (OperationType) {
     case create:
       auto trans = input.parseTransaction(cfg);
       storeTransaction(trans, cfg.storageDir);
