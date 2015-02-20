@@ -42,7 +42,7 @@ command may be provided as globs. Just make sure to escape the globs from
 interpretation by your shell (e.g. by quoting).
 
 The arguments provided for `amount` and `date` for a `list` may represent a
-range of values. The default delimiter for a range is `,`, which may be chagned
+range of values. The default delimiter for a range is `-`, which may be chagned
 in the config file.
 
 The below example query lists all transactions payed from your account named
@@ -52,6 +52,10 @@ a note containing the phrase "grocery".
 ```
 tact list amount 100-500 from credit_card on 1/1/15 for "*grocery*"
 ```
+
+A date or amount range may omit the min or max value. For example, the range
+argument `-100` means any value up to 100, while `100-` means any value 100 or
+greater.
 
 Configuration
 -----
