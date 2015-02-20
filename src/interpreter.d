@@ -1,11 +1,12 @@
 module interpreter;
 
-import std.conv;
-import std.range;
+import std.conv      : to;
+import std.range     : chunks, drop, empty;
 import std.array     : array;
 import std.string    : isNumeric;
 import std.datetime  : Date, Clock;
 import std.exception : enforce;
+import std.algorithm : findSplit, startsWith;
 import query;
 import dates;
 import config;
@@ -81,10 +82,11 @@ Query parseQuery(string[] args, Config cfg) {
         params.noteGlob = value;
         break;
       case amount:
-        value.assignMinMax!(x => x.to!float)(cfg, params.minAmount, params.maxAmount);
+        value.assignMinMax!(x => x.to!float)(cfg.rangeDelimiter, params.minAmount, params.maxAmount);
         break;
       case date:
-        value.assignMinMax!(x => x.stringToDate(cfg.dateFormat))(cfg, params.minDate, params.maxDate);
+        value.assignMinMax!(x => x.stringToDate(cfg.dateFormat))(cfg.rangeDelimiter, params.minDate, 
+            params.maxDate);
         break;
     }
   }
@@ -95,59 +97,56 @@ private:
 /// assign `min` and `max` based on a `input`, which may represent a range of values
 /// if `input` is a single value, assign `convert(input)` to `min` and `max`
 /// if `input` is a range, split it and assign the first part to `min`, the second part to `max`
-void assignMinMax(alias convert, T)(string input, Config cfg, out T min, out T max)
-  if (is(typeof(convert(string.init)) : T))
+/// if `input` starts with range delimiter, range is [T.min, input]
+/// if `input` ends with range delimiter, range is [input, T.max]
+void assignMinMax(alias convert, T)(string input, string delimiter, out T low, out T high)
+  if (is(typeof(convert(string.init)) : T) && is(typeof(T.min)) && is(typeof(T.max)))
 {
-  auto vals = input.splitRange!(T, convert)(cfg.rangeDelimiter);
-  switch(vals.length) {
-    case 1: // only one value, use as both min and max (exact range)
-      min = max = vals[0];
-      break;
-    case 2: // two values, set min and max to encompass requested range
-      min = vals[0];
-      max = vals[1];
-      break;
-    default:
-      enforce(0, input ~ " is not a valid range");
+  static if (is(T == float)) {
+    low  = -float.max;
+    high = float.max;
+  }
+  else {
+    low = T.min;
+    high = T.max;
+  }
+
+  // get split of the form [ prefix , delimiter , postfix ]
+  auto split = input.findSplit(delimiter);
+  if (split[0].empty) { // prefix is empty, range is [ T.min, postfix ]
+    high = convert(split[2]);
+  }
+  else if (split[1].empty) { // no delimiter, use value for min and max
+    low = high = convert(split[0]);
+  }
+  else if (split[2].empty) { // postfix is empty, range is [ prefix, T.max ]
+    low = convert(split[0]);
+  }
+  else { // both min and max given
+    low  = convert(split[0]);
+    high = convert(split[2]);
   }
 }
 
-/// split an argument representing a range into an array containing the range values
-T[] splitRange(T, alias convert)(string str, string delimiter)
-  if (is(typeof(convert(string.init)) : T))
-{
-  return str
-    .splitter(delimiter)   // split on range delimiter
-    .map!(x => convert(x)) // apply provided conversion function to each element
-    .array;                // return as array
-}
-
-/// splitRange
+/// `assignMinMax`
 unittest {
-  auto r1 = "125".splitRange!(int, s => s.to!int)("-");
-  auto r2 = "125-250".splitRange!(int, s => s.to!int)("-");
-  assert(r1.length == 1 && r1[0] == 125);
-  assert(r2.length == 2 && r2[0] == 125 && r2[1] == 250);
-
-  r1 = "125".splitRange!(int, s => s.to!int)("..");
-  r2 = "125..250".splitRange!(int, s => s.to!int)("..");
-  assert(r1.length == 1 && r1[0] == 125);
-  assert(r2.length == 2 && r2[0] == 125 && r2[1] == 250);
-}
-
-/// assignMinMax
-unittest {
-  struct S { float minVal; float maxVal; }
-  S s;
   Config cfg; // default config
 
-  auto input = "500.50";
-  input.assignMinMax!(x => x.to!float)(cfg, s.minVal, s.maxVal);
-  assert(s.minVal == 500.50f && s.maxVal == 500.50f);
+  bool test(string input, int expectedMin, int expectedMax, string rangeDelimiter = "-") {
+    int lo, hi;
+    assignMinMax!(x => x.to!int)(input, rangeDelimiter, lo, hi);
+    return lo == expectedMin && hi == expectedMax;
+  }
 
-  input = "220-500.50";
-  input.assignMinMax!(x => x.to!float)(cfg, s.minVal, s.maxVal);
-  assert(s.minVal == 220f && s.maxVal == 500.50f);
+  // test default delimiter "-"
+  assert(test("125"    , 125    , 125));
+  assert(test("125-250", 125    , 250));
+  assert(test("-125"   , int.min, 125));
+  assert(test("125-"   , 125    , int.max));
+
+  // test custom delimiter ".."
+  assert(test("125", 125, 125, ".."));
+  assert(test("125..250", 125, 250, ".."));
 }
 
 /// parse a simple transaction
