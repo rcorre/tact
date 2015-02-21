@@ -11,6 +11,7 @@ import std.exception;
 import std.algorithm;
 import config;
 import jsonizer;
+import completion;
 import transaction;
 
 /// matches a month and year to a json file
@@ -31,6 +32,15 @@ void storeTransaction(Transaction newTransaction, string storageDir) {
       mkdirRecurse(path.dirName); // create parent directories as needed
     }
     [newTransaction].writeJSON(path);
+  }
+
+  // cache account names for bash completion
+  if (newTransaction.dest != null) {
+    cacheAccountName(newTransaction.source, storageDir);
+  }
+
+  if (newTransaction.source != null) {
+    cacheAccountName(newTransaction.dest, storageDir);
   }
 }
 

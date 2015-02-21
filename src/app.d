@@ -19,26 +19,26 @@ void main(string[] args) {
   // load config file, or use default config if not available
   auto cfg = Config.load(configPath);
 
-  // parse input and execute command
-  auto input = args[1 .. $]; // strip executable name
-  auto opType = parseOperationKeyword(input[0], cfg.aliases);
+  // parse args and execute command
+  args = args[1 .. $]; // strip executable name
+  auto opType = operationType(args, cfg);
 
   final switch (opType) with (OperationType) {
     case create:
-      auto trans = input.parseTransaction(cfg);
+      auto trans = args.parseTransaction(cfg);
       storeTransaction(trans, cfg.storageDir);
       break;
     case query:
-      auto query        = input.parseQuery(cfg);
+      auto query        = args.parseQuery(cfg);
       auto transactions = loadTransactions(query.minDate, query.maxDate, cfg.storageDir);
       auto results      = query.filter(transactions);
       writeln(results.makeTable(["date", "source", "dest", "amount", "note" ], cfg));
       break;
     case complete:
       // the args should look like "_complete <cword> bin/tact <args...>"
-      assert(input.length >= 3, "improper arguments provided to completion function");
-      int cword = input[1].to!int;    // cword is first arg after complete
-      string[] words = input[3 .. $]; // strip duplicate executable name
+      assert(args.length >= 3, "improper arguments provided to completion function");
+      int cword = args[1].to!int;    // cword is first arg after complete
+      string[] words = args[3 .. $]; // strip duplicate executable name
       writeln(getCompletions(cword, words, cfg));
       break;
   }

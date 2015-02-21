@@ -32,13 +32,13 @@ Transaction parseTransaction(string[] args, Config cfg) {
   // if first arg is a number, use that to set transaction amount
   if (args[0].isNumeric) {
     trans.amount = args[0].to!float;
-    args = args[1 .. $];
   }
 
   trans.date   = cast(Date) Clock.currTime; // default date to today
 
+  // drop first arg, it is either amount or add keyword
   // populate transaction fields from remaining args, which come in keyword/value pairs
-  foreach(pair ; args.chunks(2)) {
+  foreach(pair ; args.drop(1).chunks(2)) {
     string keyword = pair[0];
     string value   = pair[1];
 
@@ -85,7 +85,7 @@ Query parseQuery(string[] args, Config cfg) {
         value.assignMinMax!(x => x.to!float)(cfg.rangeDelimiter, params.minAmount, params.maxAmount);
         break;
       case date:
-        value.assignMinMax!(x => x.stringToDate(cfg.dateFormat))(cfg.rangeDelimiter, params.minDate, 
+        value.assignMinMax!(x => x.stringToDate(cfg.dateFormat))(cfg.rangeDelimiter, params.minDate,
             params.maxDate);
         break;
     }
