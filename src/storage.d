@@ -9,6 +9,7 @@ import std.string;
 import std.datetime;
 import std.exception;
 import std.algorithm;
+import query;
 import config;
 import jsonizer;
 import completion;
@@ -41,6 +42,18 @@ void storeTransaction(Transaction newTransaction, string storageDir) {
 
   if (newTransaction.source != null) {
     cacheAccountName(newTransaction.dest, storageDir);
+  }
+}
+
+/// remove transactions that match `query` from storage
+auto removeTransactions(Query query, string storageDir) {
+  // load each existing path that may contain transactions in range
+  auto paths = datesToPaths(query.minDate, query.maxDate, storageDir).filter!(path => path.exists);
+  foreach(path ; paths) {
+    // read all transactions, write back only those that don't match query criteria
+    auto transactions = path.readJSON!(Transaction[]);
+    auto remaining = query.removeMatching(transactions);
+    remaining.writeJSON(path);
   }
 }
 
@@ -90,6 +103,14 @@ Date pathToDate(string path) {
   return Date(year, month, 1);
 }
 
+/// return true if `path` matches the expected format for storage paths
+bool isValidTransactionPath(string path) {
+  return 
+    path.extension == ".json"        && // must be a json file
+    path.baseName(".json").isNumeric && // with a numeric file name
+    path.dirName.baseName.isNumeric;    // and a numeric directory above that file
+}
+
 unittest {
   auto date       = Date(2015, 5, 1);
   auto storageDir = "~/.tact";
@@ -105,5 +126,6 @@ auto datesToPaths(Date start, Date end, string storageDir) {
   auto interval = Interval!Date(start, end);
   return storageDir
     .dirEntries("*.json", SpanMode.depth)
+    .filter!(entry => entry.isValidTransactionPath)
     .filter!(entry => interval.contains(entry.name.pathToDate));
 }

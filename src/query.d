@@ -3,7 +3,7 @@ module query;
 
 import std.path      : globMatch;
 import std.datetime  : Date;
-import std.algorithm : filter;
+import std.algorithm : filter, remove;
 import transaction;
 
 /// encapsulates query parameters provided by user to a query command
@@ -23,15 +23,26 @@ struct Query {
   /// include transaction in query if note matches glob
   string noteGlob = "*";
 
+  /// return a range consisting of a subset of `transactions` that meet the query criteria
   auto filter(Transaction[] transactions) {
-    return transactions
-      .filter!(x => x.amount >= minAmount)
-      .filter!(x => x.amount <= maxAmount)
-      .filter!(x => x.date >= minDate)
-      .filter!(x => x.date <= maxDate)
-      .filter!(x => x.source.globMatch(sourceGlob))
-      .filter!(x => x.dest.globMatch(destGlob))
-      .filter!(x => x.note.globMatch(noteGlob));
+    return transactions.filter!(x => matchesQuery(x));
+  }
+
+  /// remove elements from `transactions` that meet the query criteria
+  /// mutates `transactions`, and returns a range over the mutated collection
+  auto removeMatching(Transaction[] transactions) {
+    return transactions.remove!(x => matchesQuery(x));
+  }
+
+  private bool matchesQuery(Transaction trans) {
+    return
+      trans.amount >= minAmount          &&
+      trans.amount <= maxAmount          &&
+      trans.date >= minDate              &&
+      trans.date <= maxDate              &&
+      trans.source.globMatch(sourceGlob) &&
+      trans.dest.globMatch(destGlob)     &&
+      trans.note.globMatch(noteGlob);
   }
 }
 
@@ -51,6 +62,13 @@ version (unittest) {
   /// test that result of `query` on transactions contains only transactions at `expectedIndices`
   bool queryMatch(Query query, int[] expectedIndices ...) {
     return query.filter(transactions).equal(transactions.indexed(expectedIndices));
+  }
+
+  /// after using `query` to remove matching transactions, assert that only elements at
+  /// `remainingIndices` remain
+  bool remainsAfterRemove(Query query, int[] remainingIndices ...) {
+    auto copy = transactions;
+    return query.removeMatching(copy).equal(transactions.indexed(remainingIndices));
   }
 }
 
@@ -92,4 +110,16 @@ unittest {
 
   query.sourceGlob = "debit";
   assert(query.queryMatch(1, 5));
+}
+
+/// removal
+unittest {
+  auto tr = transactions;
+  Query query;
+
+  query.minAmount = 105.25;
+  assert(query.remainsAfterRemove(4, 5));
+
+  query.maxAmount = 125.25;
+  assert(query.remainsAfterRemove(2, 4, 5));
 }
