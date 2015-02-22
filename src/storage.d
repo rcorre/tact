@@ -5,7 +5,7 @@ import std.file;
 import std.path;
 import std.conv;
 import std.range;
-import std.array : array;
+import std.array : array, split;
 import std.string;
 import std.datetime;
 import std.process : wait, spawnProcess;
@@ -22,7 +22,7 @@ private enum pathFormat = "%s/%d/%d.json";
 private enum editFileName = "tact_edit.json";
 
 class StorageException : Exception {
-  this(string message, string params ...) {
+  this(string message, string[] params ...) {
     super("Storage failure:\n" ~ msg.format(params));
   }
 }
@@ -83,7 +83,7 @@ bool editTransactions(Query query, Config cfg) {
   toEdit.array.writeJSON(path);
 
   // open temp file with editor
-  auto pid = spawnProcess(["vim", path]); 
+  auto pid = spawnProcess(["vim", path]);
   if (pid.wait == 0) {
     try {
       auto result = path.readJSON!(Transaction[]);
@@ -169,4 +169,23 @@ auto datesToPaths(Date start, Date end, string storageDir) {
     .dirEntries("*.json", SpanMode.depth)
     .filter!(entry => entry.isValidTransactionPath)
     .filter!(entry => interval.contains(entry.name.pathToDate));
+}
+
+string[] constructEditProcessArgs(string fileName, string editCmd) {
+  try {
+    string argString = editCmd.format(fileName);
+    return argString.split(" ");
+  }
+  catch {
+    throw new StorageException("Failed to open editor.\nCommand format: %s\nFilename: %s",
+        editCmd, fileName);
+  }
+}
+
+/// `constructEditProcessArgs`
+unittest {
+  assert(constructEditProcessArgs("some/file.json", "gvim %s") == [ "gvim", "some/file.json" ]);
+
+  assert(constructEditProcessArgs("a/b.json", "someeditor -e %s --otheroption") ==
+      [ "someeditor", "-e", "a/b.json", "--otheroption" ]);
 }

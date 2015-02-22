@@ -13,7 +13,8 @@ else {
 
 private enum {
   defaultRangeDelimiter = "-",
-  defaultDateFormat     = "%m/%d/%y"
+  defaultDateFormat     = "%m/%d/%y",
+  defaultEditCommand    = "vim %s",
 }
 
 /// keywords used to identify transaction and query parameters
@@ -37,6 +38,7 @@ struct Config {
     string _rangeDelimiter = defaultRangeDelimiter; /// token to separate min/max args in query
     string _dateFormat     = defaultDateFormat;     /// format used to parse and format dates
     string _storageDir     = defaultStorageDir;     /// directory where transactions are stored
+    string _editCommand    = defaultStorageDir;     /// command to spawn text editor
     string[string] _aliases;
   }
 
@@ -44,6 +46,7 @@ struct Config {
     string[string] aliases() { return _aliases; }
     string dateFormat()      { return _dateFormat; }
     string rangeDelimiter()  { return _rangeDelimiter; }
+    string editCommand()     { return _editCommand; }
 
     string storageDir() {
       assert(_storageDir !is null, "null storage directory");
@@ -55,6 +58,7 @@ struct Config {
     _storageDir     = get!string(ini.general, "storageDir", defaultStorageDir);
     _rangeDelimiter = get!string(ini.general, "rangeDelimiter", defaultRangeDelimiter);
     _dateFormat     = get!string(ini.general, "dateFormat", defaultDateFormat);
+    _editCommand    = get!string(ini.general, "editCommand", defaultEditCommand);
 
     auto aliasSection = "alias" in ini.children;
     if (aliasSection !is null) {
