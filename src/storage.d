@@ -5,9 +5,10 @@ import std.file;
 import std.path;
 import std.conv;
 import std.range;
+import std.array : array;
 import std.string;
 import std.datetime;
-import std.exception;
+import std.process : wait, spawnProcess;
 import std.algorithm;
 import query;
 import config;
@@ -15,9 +16,16 @@ import jsonizer;
 import completion;
 import transaction;
 
-/// matches a month and year to a json file
-/// storageDir/year/month.json
+/// matches a month and year to a json file: storageDir/year/month.json
 private enum pathFormat = "%s/%d/%d.json";
+/// temporary file name used to edit transactions
+private enum editFileName = "tact_edit.json";
+
+class StorageException : Exception {
+  this(string message, string params ...) {
+    super("Storage failure:\n" ~ msg.format(params));
+  }
+}
 
 /// write newTransaction to the appropriate file
 void storeTransaction(Transaction newTransaction, string storageDir) {
@@ -45,6 +53,12 @@ void storeTransaction(Transaction newTransaction, string storageDir) {
   }
 }
 
+void storeTransactions(Transaction[] newTransactions, string storageDir) {
+  foreach(trans ; newTransactions) {
+    storeTransaction(trans, storageDir);
+  }
+}
+
 /// remove transactions that match `query` from storage
 auto removeTransactions(Query query, string storageDir) {
   // load each existing path that may contain transactions in range
@@ -55,6 +69,33 @@ auto removeTransactions(Query query, string storageDir) {
     auto remaining = query.removeMatching(transactions);
     remaining.writeJSON(path);
   }
+}
+
+/// spawn an editor to modify transactions matching `query`
+/// returns `true` if transactions successfully edited
+bool editTransactions(Query query, Config cfg) {
+  // construct json array containing only transactions matching the query
+  auto toEdit = query.filter(loadTransactions(query.minDate, query.maxDate, cfg.storageDir));
+
+  // place json in temp file
+  auto path = buildPath(tempDir(), editFileName);
+  scope(exit) { path.remove(); }
+  toEdit.array.writeJSON(path);
+
+  // open temp file with editor
+  auto pid = spawnProcess(["vim", path]); 
+  if (pid.wait == 0) {
+    try {
+      auto result = path.readJSON!(Transaction[]);
+      removeTransactions(query, cfg.storageDir);
+      storeTransactions(result, cfg.storageDir);
+      return true;
+    }
+    catch {
+      throw new StorageException("Edit cancelled, invalid json:\n%s", path.readText);
+    }
+  }
+  return false;
 }
 
 auto loadTransactions(Date startDate, Date endDate, string storageDir) {
@@ -105,7 +146,7 @@ Date pathToDate(string path) {
 
 /// return true if `path` matches the expected format for storage paths
 bool isValidTransactionPath(string path) {
-  return 
+  return
     path.extension == ".json"        && // must be a json file
     path.baseName(".json").isNumeric && // with a numeric file name
     path.dirName.baseName.isNumeric;    // and a numeric directory above that file

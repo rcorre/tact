@@ -2,11 +2,11 @@ import std.conv  : to;
 import std.math  : isNaN;
 import std.stdio : write, writeln, readln;
 import std.string : chomp, toLower;
-import std.exception : enforce;
 import config;
 import storage;
 import printer;
 import keywords;
+import jsonizer;
 import completion;
 import interpreter;
 
@@ -52,6 +52,16 @@ void main(string[] args) {
         string response = readln().chomp.toLower;
         if (response == "y" || response == "yes") {
           removeTransactions(query, cfg.storageDir);
+        }
+        break;
+      case edit:
+        auto query = args.parseQuery(cfg);
+        bool edited = editTransactions(query, cfg);
+        if (edited) {
+          writeln("Edit successful");
+        }
+        else {
+          writeln("Edit operation cancelled");
         }
         break;
       case complete:
