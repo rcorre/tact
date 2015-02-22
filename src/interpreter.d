@@ -3,7 +3,7 @@ module interpreter;
 import std.conv      : to;
 import std.range     : chunks, drop, empty;
 import std.array     : array;
-import std.string    : isNumeric;
+import std.string    : isNumeric, format;
 import std.datetime  : Date, Clock;
 import std.exception : enforce;
 import std.algorithm : findSplit, startsWith;
@@ -12,6 +12,14 @@ import dates;
 import config;
 import keywords;
 import transaction;
+
+/// thrown when command line options cannot be interpreted
+class InterpreterException : Exception {
+  /// construct an exception from the invalid keyword `input`
+  this(string msg, string params ...) {
+    super("Interpreter failure:\n" ~ msg.format(params));
+  }
+}
 
 /// determine the type of command represented by the given input `args`
 OperationType operationType(string[] args, Config cfg) {
@@ -68,6 +76,9 @@ Transaction parseTransaction(string[] args, Config cfg) {
 Query parseQuery(string[] args, Config cfg) {
   Query params;
   foreach(pair ; args.drop(1).chunks(2)) {
+    if (pair.length == 1) {
+      throw new InterpreterException("no argument provided for keyword %s", pair[0]);
+    }
     string keyword = pair[0];
     string value   = pair[1];
 
