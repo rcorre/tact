@@ -1,4 +1,5 @@
 import std.conv  : to;
+import std.math  : isNaN;
 import std.stdio : write, writeln, readln;
 import std.string : chomp, toLower;
 import std.exception : enforce;
@@ -28,7 +29,12 @@ void main(string[] args) {
     final switch (opType) with (OperationType) {
       case create:
         auto trans = args.parseTransaction(cfg);
-        storeTransaction(trans, cfg.storageDir);
+        if (trans.amount.isNaN || trans.source is null || trans.dest is null) {
+          writeln("A transaction must specify an amount, source, and dest");
+        }
+        else {
+          storeTransaction(trans, cfg.storageDir);
+        }
         break;
       case query:
         auto query        = args.parseQuery(cfg);
