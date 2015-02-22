@@ -5,6 +5,7 @@ module keywords;
 enum OperationType {
   create  , /// record a new transaction
   query   , /// retrieve information on previous transactions
+  remove  , /// remove transactions matching from storage
   complete  /// request for bash completion options
 }
 
@@ -20,6 +21,7 @@ enum ParameterType {
 private enum operationKeywords = [
   "add"        : OperationType.create,
   "list"       : OperationType.query,
+  "remove"     : OperationType.remove,
    "_complete" : OperationType.complete,
 ];
 

@@ -1,5 +1,6 @@
 import std.conv  : to;
-import std.stdio : writeln;
+import std.stdio : write, writeln, readln;
+import std.string : chomp, toLower;
 import std.exception : enforce;
 import config;
 import storage;
@@ -33,6 +34,18 @@ void main(string[] args) {
       auto transactions = loadTransactions(query.minDate, query.maxDate, cfg.storageDir);
       auto results      = query.filter(transactions);
       writeln(results.makeTable(["date", "source", "dest", "amount", "note" ], cfg));
+      break;
+    case remove:
+      auto query        = args.parseQuery(cfg);
+      auto transactions = loadTransactions(query.minDate, query.maxDate, cfg.storageDir);
+      auto results      = query.filter(transactions);
+      writeln("The following transactions will be removed:");
+      writeln(results.makeTable(["date", "source", "dest", "amount", "note" ], cfg));
+      write("OK (y/n)?: ");
+      string response = readln().chomp.toLower;
+      if (response == "y" || response == "yes") {
+        removeTransactions(query, cfg.storageDir);
+      }
       break;
     case complete:
       // the args should look like "_complete <cword> bin/tact <args...>"
