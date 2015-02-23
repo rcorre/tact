@@ -1,6 +1,7 @@
 import std.conv  : to;
 import std.math  : isNaN;
-import std.stdio : write, writeln, readln;
+import std.range : chain;
+import std.stdio : write, writeln, writefln, readln;
 import std.string : chomp, toLower;
 import config;
 import storage;
@@ -63,6 +64,16 @@ void main(string[] args) {
         else {
           writeln("Edit operation cancelled");
         }
+        break;
+      case balance:
+        if (args.length == 0) {
+          writeln("Expected the name of an account to balance");
+          break;
+        }
+        float balance;
+        auto transactions = loadAccountBalance(args[1], cfg.storageDir, balance);
+        writeln(transactions.makeTable(["date", "source", "dest", "amount", "note" ], cfg));
+        writefln("Balance: %.2f", balance);
         break;
       case complete:
         // the args should look like "_complete <cword> bin/tact <args...>"

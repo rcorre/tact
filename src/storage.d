@@ -106,6 +106,26 @@ auto loadTransactions(Date startDate, Date endDate, string storageDir) {
     .reduce!((a,b) => a ~ b);                    // flatten range of ranges
 }
 
+auto loadAccountBalance(string accountName, string storageDir, out float balance) {
+  auto allTransactions = loadTransactions(Date.min, Date.max, storageDir);
+
+  Query incomingQuery, outgoingQuery;
+  // all transactions with this account as the source are outgoing
+  outgoingQuery.sourceGlob = accountName;
+  // all transactions with this account as the destination are incoming
+  incomingQuery.destGlob   = accountName;
+
+  auto outgoing = outgoingQuery.filter(allTransactions);
+  auto incoming = incomingQuery.filter(allTransactions);
+
+  auto inflow  = incoming.map!(x => x.amount).sum;
+  auto outflow = outgoing.map!(x => x.amount).sum;
+  balance = inflow - outflow;
+
+  return incoming.array ~ outgoing.array;
+}
+
+/// `loadTransactions`
 unittest {
  // create a temporary dir for testing, make sure to clean up when done
   auto dir = buildPath(tempDir(), "tact_unit_test");
@@ -129,6 +149,38 @@ unittest {
 
   auto actual = loadTransactions(Date(2015, 1, 10), Date(2015, 2, 10), dir);
   assert(actual.length == expected.length && actual.all!(x => expected.canFind(x)));
+}
+
+/// `loadAccountBalance`
+unittest {
+  import std.math : approxEqual;
+  import std.range : indexed;
+ // create a temporary dir for testing, make sure to clean up when done
+  auto dir = buildPath(tempDir(), "tact_unit_test");
+  assert(dir != ".", "failed to create tempDir for test");
+  scope(exit) {
+    if (dir.exists) {
+      dir.rmdirRecurse;
+    }
+  }
+
+  // store some transactions
+  Transaction[] transactions = [
+    Transaction(105.25 , "credit"  , "store"   , Date(2015 , 1 , 25)) ,
+    Transaction(125.25 , "credit"  , "store"   , Date(2015 , 1 , 22)) ,
+    Transaction(500.00 , "work"    , "savings" , Date(2015 , 2 , 2))  ,
+    Transaction(125.25 , "savings" , "credit"  , Date(2015 , 2 , 5))  ,
+  ];
+  foreach(trans ; transactions) {
+    trans.storeTransaction(dir);
+  }
+
+  float balance;
+  auto actual = loadAccountBalance("credit", dir, balance);
+
+  auto expected = transactions.indexed([0, 1, 3]);
+  assert(actual.walkLength == expected.walkLength && actual.all!(x => expected.canFind(x)));
+  assert(balance.approxEqual(125.25 - (125.25 + 105.25)));
 }
 
 private:

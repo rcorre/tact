@@ -7,6 +7,7 @@ enum OperationType {
   query   , /// retrieve information on previous transactions
   remove  , /// remove transactions matching from storage
   edit    , /// edit transactions matching query
+  balance , /// sum all transactions for an account
   complete  /// request for bash completion options
 }
 
@@ -24,6 +25,7 @@ private enum operationKeywords = [
   "list"       : OperationType.query,
   "remove"     : OperationType.remove,
   "edit"       : OperationType.edit,
+  "balance"    : OperationType.balance,
    "_complete" : OperationType.complete,
 ];
 
