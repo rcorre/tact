@@ -110,6 +110,7 @@ unittest {
     `storageDir     = "~/my_custom_dir/tact"`,
     `rangeDelimiter = ":"`,
     `dateFormat     = "%Y-%m-%d"`,
+    `editCommand    = "gvim %s"`,
 
     "[alias]",
     `price       = "amount"`,
@@ -126,6 +127,7 @@ unittest {
   assert(cfg.storageDir == "~/my_custom_dir/tact".expandTilde);
   assert(cfg.dateFormat == "%Y-%m-%d");
   assert(cfg.rangeDelimiter == ":");
+  assert(cfg.editCommand == "gvim %s");
 
   // custom aliases
   assert(cfg.aliases["price"]       == "amount");

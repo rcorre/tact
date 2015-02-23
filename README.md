@@ -57,6 +57,44 @@ A date or amount range may omit the min or max value. For example, the range
 argument `-100` means any value up to 100, while `100-` means any value 100 or
 greater.
 
+Reporting Balance
+-----
+
+To view the current balance of an account, use the command:
+
+```
+tact balance <accountname>
+```
+
+For example, `tact balance savings` will print out all transactions involving balance, followed by
+the total balance of that account.
+
+Removing Transactions
+-----
+
+To remove recorded transactions, provide a query describing transactions you want to remove:
+
+```
+tact remove amount <amount> from <source> to <destination> on <date> for <note>
+```
+
+The arguments work exactly the same as those for `query`. The transactions matching the query
+parameters will be printed, and tact will ask you to confirm whether you want to delete all
+transactions matching the query.
+
+Editing Transactions
+-----
+
+To edit recorded transactions, use a command of the form
+
+```
+tact edit amount <amount> from <source> to <destination> on <date> for <note>
+```
+
+The arguments work exactly the same as those for `query`. The transactions matching the query
+parameters will be loaded into a buffer and opened with your editor.
+You may edit the json data, then save and exit your editor to record the modified transactions.
+
 Configuration
 -----
 Tact reads custom settings from the file `~/.tactrc`.
@@ -68,6 +106,7 @@ Here is an example `.tactrc`, note that all string values **must** be quoted:
 storageDir     = "~/.config/tact"
 rangeDelimiter = ":"
 dateFormat     = "%y/%m/%d"
+editcommand    = "vim %s"
 
 [alias]
 amt  = "amount"
@@ -88,6 +127,12 @@ transactions whose amounts fall between 100 and 300.
 
 `dateFormat` is the format used to parse and print dates. See `man strftime` for format options.
 **default: %m/%d/%y**
+
+
+`editcommand` is the command used to open an editor to modify transactions. This should include
+exactly one `%s` format argument, which will be populated with the path of the temporary file
+containing the transactions to be edited.
+**default: vim %s**
 
 
 The `alias` section allows you to define your own keywords to use.
