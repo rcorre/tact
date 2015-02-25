@@ -19,7 +19,7 @@ The note defaults to an empty string if not specified
 Here are a few examples:
 
 ```
-tact 125.25 from credit_card to grocery_store on 1/3/15 for "food and stuff" 
+tact 125.25 from credit_card to grocery_store on 1/3/15 for "food and stuff"
 tact 300 from savings to credit_card on 1/3/15
 tact 250 from payroll to savings
 ```
@@ -95,6 +95,23 @@ The arguments work exactly the same as those for `query`. The transactions match
 parameters will be loaded into a buffer and opened with your editor.
 You may edit the json data, then save and exit your editor to record the modified transactions.
 
+Sorting Results
+-----
+
+Query results can be sorted on a given parameter using the `sort` and `revsort` arguments.
+
+```
+tact list from some_account sort amount
+tact list to other_account revsort date
+```
+
+The first command will produce a list of transactions with "some\_account" as the source, sorted in
+order of increasing amount.
+The second will produce a list of transactions with "other\_account" as the destination, sorted in
+order of descending date (most recent at the top).
+
+The default is to sort by ascending date
+
 Configuration
 -----
 Tact reads custom settings from the file `~/.tactrc`.
@@ -145,4 +162,4 @@ setting in your `tactrc` (which defaults to `~/.tact`.
 
 When storing a transaction, `tact` creates a subdirectory for the year and a
 file for the month. For example, using the default storage dir, a transaction
-that occured on 2015-05-22 would be found in the file `~/.tact/2015/5.json`. 
+that occured on 2015-05-22 would be found in the file `~/.tact/2015/5.json`.
