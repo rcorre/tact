@@ -1,9 +1,12 @@
-/// filter a list of transactions by certain criteria 
+/// filter a list of transactions by certain criteria
 module query;
 
 import std.path      : globMatch;
+import std.string    : format;
 import std.datetime  : Date;
-import std.algorithm : filter, remove;
+import std.typecons  : Flag, Yes, No;
+import std.algorithm : filter, remove, sort;
+import keywords;
 import transaction;
 
 /// encapsulates query parameters provided by user to a query command
@@ -23,6 +26,9 @@ struct Query {
   /// include transaction in query if note matches glob
   string noteGlob = "*";
 
+  /// sort criteria
+  SortParameter sortBy = SortParameter(ParameterType.date, Yes.ascending);
+
   /// return a range consisting of a subset of `transactions` that meet the query criteria
   auto filter(Transaction[] transactions) {
     return transactions.filter!(x => matchesQuery(x));
@@ -34,7 +40,17 @@ struct Query {
     return transactions.remove!(x => matchesQuery(x));
   }
 
-  private bool matchesQuery(Transaction trans) {
+  void applySort(Transaction[] transactions) {
+    if (sortBy.ascending) {
+      doSort!"<"(sortBy.field, transactions);
+    }
+    else {
+      doSort!">"(sortBy.field, transactions);
+    }
+  }
+
+  private:
+  bool matchesQuery(Transaction trans) {
     return
       trans.amount >= minAmount          &&
       trans.amount <= maxAmount          &&
@@ -43,6 +59,33 @@ struct Query {
       trans.source.globMatch(sourceGlob) &&
       trans.dest.globMatch(destGlob)     &&
       trans.note.globMatch(noteGlob);
+  }
+
+  static auto sorter(string op, string member)() {
+    return mixin("(Transaction a, Transaction b) => a.%s %s b.%s".format(member, op, member));
+  }
+
+  static void doSort(string op)(ParameterType field, Transaction[] transactions) {
+    final switch (field) with (ParameterType) {
+      case source:
+        transactions.sort!(sorter!(op, "source")());
+        break;
+      case dest:
+        transactions.sort!(sorter!(op, "dest")());
+        break;
+      case date:
+        transactions.sort!(sorter!(op, "date")());
+        break;
+      case note:
+        transactions.sort!(sorter!(op, "note")());
+        break;
+      case amount:
+        transactions.sort!(sorter!(op, "amount")());
+        break;
+      case sort:
+      case revsort:
+        break;
+    }
   }
 }
 
@@ -69,6 +112,12 @@ version (unittest) {
   bool remainsAfterRemove(Query query, int[] remainingIndices ...) {
     auto copy = transactions;
     return query.removeMatching(copy).equal(transactions.indexed(remainingIndices));
+  }
+
+  bool sortedOrderIs(Query query, int[] orderedIndices ...) {
+    auto t = transactions;
+    query.applySort(t);
+    return t.equal(transactions.indexed(orderedIndices));
   }
 }
 
@@ -122,4 +171,21 @@ unittest {
 
   query.maxAmount = 125.25;
   assert(query.remainsAfterRemove(2, 4, 5));
+}
+
+/// apply sort
+unittest {
+  Query q;
+
+  q.sortBy = SortParameter(ParameterType.amount, Yes.ascending);
+  assert(q.sortedOrderIs(4, 5, 1, 0, 3, 2));
+
+  q.sortBy = SortParameter(ParameterType.amount, No.ascending);
+  assert(q.sortedOrderIs(2, 0, 3, 1, 4, 5));
+
+  q.sortBy = SortParameter(ParameterType.date, Yes.ascending);
+  assert(q.sortedOrderIs(4, 5, 0, 1, 2, 3));
+
+  q.sortBy = SortParameter(ParameterType.source, No.ascending);
+  assert(q.sortedOrderIs(2, 3, 1, 5, 0, 4));
 }

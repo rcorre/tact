@@ -1,6 +1,9 @@
 /// manage keywords used on cli
 module keywords;
 
+import std.conv : to;
+import std.typecons : Flag, Yes, No;
+
 /// type of action to take
 enum OperationType {
   create  , /// record a new transaction
@@ -18,6 +21,8 @@ enum ParameterType {
   date    , /// to date on which a transaction occured
   note    , /// a note about the transaction
   amount  , /// the quantity of money in a transaction
+  sort    , /// ascending sort parameter
+  revsort , /// descending sort parameter
 }
 
 private enum operationKeywords = [
@@ -35,13 +40,20 @@ private enum parameterKeywords = [
   "on"     : ParameterType.date,
   "for"    : ParameterType.note,
   "amount" : ParameterType.amount,
+  "sort"   : ParameterType.sort,
+  "revsort": ParameterType.revsort,
 ];
+
+/// defines the criteria for a sort argument
+struct SortParameter {
+  ParameterType field;        /// field to sort by
+  Flag!"ascending" ascending; /// if Ascending.yes, low values first; otherwise high values first
+}
 
 /// thrown when a keyword input at the CLI cannot be translated
 class KeywordException : Exception {
   /// construct an exception from the invalid keyword `input`
-  this(string input) {
-    string msg = input ~ " is not a known keyword";
+  this(string msg) {
     super(msg);
   }
 }
@@ -54,12 +66,35 @@ ParameterType parseParameterKeyword(string input, string[string] aliases) {
   return parseKeyword!ParameterType(input, aliases, parameterKeywords);
 }
 
+/// extract a sort argument
+/// Params:
+///   sortType: `sort` or `revsort`
+///   sortParam: string representing a `ParameterType` to order by
+///   aliases: maps custom keywords to default keywords
+/// Returns: `SortParameter` which specifies field to sort on and ascending/descending sort
+SortParameter parseSortParameter(ParameterType sortType, string sortParam, string[string] aliases) {
+  assert(sortType == ParameterType.sort || sortType == ParameterType.revsort,
+      "parseSortParameter expected sortType or sort or revsort, not " ~ sortType.to!string);
+
+  auto param = parseKeyword!ParameterType(sortParam, aliases, parameterKeywords);
+  if (param == ParameterType.sort || param == ParameterType.revsort) {
+    throw new KeywordException("Cannot sort by " ~ sortParam);
+  }
+
+  SortParameter s;
+  // field to sort by
+  s.field = param;
+  // if sort, ascending. if revsort, descending
+  s.ascending = (sortType == ParameterType.sort) ? Yes.ascending : No.ascending; 
+  return s;
+}
+
 private:
 T parseKeyword(T)(string input, string[string] aliases, const T[string] lookup) if (is(T == enum)) {
   input = aliases.get(input, input); // replace input with alias if present
   auto val = input in lookup;        // look up keyword after alias translation
   if (val is null) {
-    throw new KeywordException(input);
+    throw new KeywordException(input ~ " is not a known keyword");
   }
   return *val;
 }
@@ -89,4 +124,18 @@ unittest {
 
   assertThrown!KeywordException("nope".parseOperationKeyword(opAlias));
   assertThrown!KeywordException("nope".parseParameterKeyword(opAlias));
+}
+
+/// `parseSortParameter`
+unittest {
+  import std.exception : assertThrown;
+  assert(parseSortParameter(ParameterType.sort, "amount", null) ==
+      SortParameter(ParameterType.amount, Yes.ascending));
+
+  assert(parseSortParameter(ParameterType.revsort, "on", null) ==
+      SortParameter(ParameterType.date, No.ascending));
+
+  auto aliases = [ "orderby" : "sort", "src" : "from" ];
+  assert(parseSortParameter(ParameterType.revsort, "src", aliases) ==
+      SortParameter(ParameterType.source, No.ascending));
 }

@@ -67,6 +67,9 @@ Transaction parseTransaction(string[] args, Config cfg) {
       case amount:
         trans.amount = value.to!float;
         break;
+      case sort:
+      case revsort:
+        break;
     }
   }
 
@@ -98,6 +101,12 @@ Query parseQuery(string[] args, Config cfg) {
       case date:
         value.assignMinMax!(x => x.stringToDate(cfg.dateFormat))(cfg.rangeDelimiter, params.minDate,
             params.maxDate);
+        break;
+      case sort:
+        params.sortBy = SortParameter(parseParameterKeyword(value, cfg.aliases), Yes.ascending);
+        break;
+      case revsort:
+        params.sortBy = SortParameter(parseParameterKeyword(value, cfg.aliases), No.ascending);
         break;
     }
   }

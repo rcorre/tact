@@ -1,6 +1,7 @@
 import std.conv  : to;
 import std.math  : isNaN;
 import std.range : chain;
+import std.array : array;
 import std.stdio : write, writeln, writefln, readln;
 import std.string : chomp, toLower;
 import config;
@@ -40,13 +41,15 @@ void main(string[] args) {
       case query:
         auto query        = args.parseQuery(cfg);
         auto transactions = loadTransactions(query.minDate, query.maxDate, cfg.storageDir);
-        auto results      = query.filter(transactions);
+        auto results      = query.filter(transactions).array;
+        query.applySort(results);
         writeln(results.makeTable(["date", "source", "dest", "amount", "note" ], cfg));
         break;
       case remove:
         auto query        = args.parseQuery(cfg);
         auto transactions = loadTransactions(query.minDate, query.maxDate, cfg.storageDir);
-        auto results      = query.filter(transactions);
+        auto results      = query.filter(transactions).array;
+        query.applySort(results);
         writeln("The following transactions will be removed:");
         writeln(results.makeTable(["date", "source", "dest", "amount", "note" ], cfg));
         write("OK (y/n)?: ");
