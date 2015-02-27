@@ -4,6 +4,7 @@ import std.range : chain;
 import std.array : array;
 import std.stdio : write, writeln, writefln, readln;
 import std.string : chomp, toLower;
+import usage;
 import config;
 import storage;
 import printer;
@@ -21,6 +22,11 @@ else {
 
 void main(string[] args) {
   try {
+    if (args.length <= 1) {
+      printUsage();
+      return;
+    }
+
     // load config file, or use default config if not available
     auto cfg = Config.load(configPath);
 
@@ -77,6 +83,9 @@ void main(string[] args) {
         auto transactions = loadAccountBalance(args[1], cfg.storageDir, balance);
         writeln(transactions.makeTable(["date", "source", "dest", "amount", "note" ], cfg));
         writefln("Balance: %.2f", balance);
+        break;
+      case help:
+        printUsage();
         break;
       case complete:
         // the args should look like "_complete <cword> bin/tact <args...>"
