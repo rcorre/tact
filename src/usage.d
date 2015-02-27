@@ -16,7 +16,33 @@ void printUsage() {
   writeln("Use help <command> for command specific-usage information");
 }
 
-void printOperationUsage(OperationType op, Config cfg) {
+void printOperationUsage(OperationType op, string keywordUsed) {
+  string argString;
+  final switch (op) with (OperationType) {
+    case create:
+      argString = "<amount> [from <source>] [to <dest>] [on <date>] [for <note>]";
+      break;
+    case query:
+      argString = "[amount <amount>] [from <source>] [to <dest>] [on <date>] [for <note>]";
+      break;
+    case remove:
+      argString = "[amount <amount>] [from <source>] [to <dest>] [on <date>] [for <note>]";
+      break;
+    case edit:
+      argString = "[amount <amount>] [from <source>] [to <dest>] [on <date>] [for <note>]";
+      break;
+    case balance:
+      argString = "<account_name>";
+      break;
+    case help:
+      argString = "[<command>]";
+      break;
+    case complete:
+      argString = "WORDS";
+      break;
+  }
+
+  writefln("usage: tact %s %s", keywordUsed, argString);
 }
 
 private:

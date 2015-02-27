@@ -87,7 +87,7 @@ SortParameter parseSortParameter(ParameterType sortType, string sortParam, strin
   // field to sort by
   s.field = param;
   // if sort, ascending. if revsort, descending
-  s.ascending = (sortType == ParameterType.sort) ? Yes.ascending : No.ascending; 
+  s.ascending = (sortType == ParameterType.sort) ? Yes.ascending : No.ascending;
   return s;
 }
 

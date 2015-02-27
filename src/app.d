@@ -85,7 +85,14 @@ void main(string[] args) {
         writefln("Balance: %.2f", balance);
         break;
       case help:
-        printUsage();
+        if (args.length > 1) { // get help for a specific command
+          auto word = args[1];
+          auto op = parseOperationKeyword(word, cfg.aliases);
+          printOperationUsage(op, word);
+        }
+        else { // get general help
+          printUsage();
+        }
         break;
       case complete:
         // the args should look like "_complete <cword> bin/tact <args...>"
