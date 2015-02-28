@@ -68,6 +68,16 @@ ParameterType parseParameterKeyword(string input, string[string] aliases) {
   return parseKeyword!ParameterType(input, aliases, parameterKeywords);
 }
 
+/// return the default string keyword used to indicate the `OperationType` `op`
+string defaultKeyword(OperationType op) {
+  return operationKeywords.valToKey(op);
+}
+
+/// return the default string keyword used to indicate the `ParameterType` `param`
+string defaultKeyword(ParameterType param) {
+  return parameterKeywords.valToKey(param);
+}
+
 /// extract a sort argument
 /// Params:
 ///   sortType: `sort` or `revsort`
@@ -99,6 +109,16 @@ T parseKeyword(T)(string input, string[string] aliases, const T[string] lookup) 
     throw new KeywordException(input ~ " is not a known keyword");
   }
   return *val;
+}
+
+/// find a key that maps to the given value `val` in the associative array `aa`
+K valToKey(K, V)(V[K] aa, V val) {
+  foreach(k, v ; aa) {
+    if (v == val) {
+      return k;
+    }
+  }
+  assert(0, "no key maps to val " ~ val.to!string);
 }
 
 /// `parseOperationKeyword` and `parseParameterKeyword`
@@ -140,4 +160,11 @@ unittest {
   auto aliases = [ "orderby" : "sort", "src" : "from" ];
   assert(parseSortParameter(ParameterType.revsort, "src", aliases) ==
       SortParameter(ParameterType.source, No.ascending));
+}
+
+/// 'valToKey'
+unittest {
+  auto aa = [ "a" : 1, "b" : 2 ];
+  assert(aa.valToKey(1) == "a");
+  assert(aa.valToKey(2) == "b");
 }
