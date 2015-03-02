@@ -10,7 +10,7 @@ Recording Transactions
 To record a transaction, use a command of the form
 
 ```
-tact <amount> from <source> to <destination> on <date> for <note>
+tact <amount> from <source> to <destination> on <date> for <note> tags <tag1,tag2,...>
 ```
 
 If a date is not specified, it defaults to the current date.
@@ -21,7 +21,7 @@ Here are a few examples:
 ```
 tact 125.25 from credit_card to grocery_store on 1/3/15 for "food and stuff"
 tact 300 from savings to credit_card on 1/3/15
-tact 250 from payroll to savings
+tact 250 from payroll to savings tags "work,overtime"
 ```
 
 Querying Transactions
@@ -30,7 +30,7 @@ Querying Transactions
 To list recorded transactions, use a command of the form
 
 ```
-tact list amount <amount> from <source> to <destination> on <date> for <note>
+tact list amount <amount> from <source> to <destination> on <date> for <note> tags <tag1,tag2,...>
 ```
 
 Note that the first argument is the keyword `list` -- this tells `tact` that
@@ -75,7 +75,7 @@ Removing Transactions
 To remove recorded transactions, provide a query describing transactions you want to remove:
 
 ```
-tact remove amount <amount> from <source> to <destination> on <date> for <note>
+tact remove amount <amount> from <source> to <destination> on <date> for <note> tags <tag1,tag2,...>
 ```
 
 The arguments work exactly the same as those for `query`. The transactions matching the query
@@ -88,7 +88,7 @@ Editing Transactions
 To edit recorded transactions, use a command of the form
 
 ```
-tact edit amount <amount> from <source> to <destination> on <date> for <note>
+tact edit amount <amount> from <source> to <destination> on <date> for <note> tags <tag1,tag2,...>
 ```
 
 The arguments work exactly the same as those for `query`. The transactions matching the query

@@ -5,7 +5,7 @@ import std.path      : globMatch;
 import std.string    : format;
 import std.datetime  : Date;
 import std.typecons  : Flag, Yes, No;
-import std.algorithm : filter, remove, sort;
+import std.algorithm : filter, remove, sort, all, canFind;
 import keywords;
 import transaction;
 
@@ -25,6 +25,8 @@ struct Query {
   string destGlob = "*";
   /// include transaction in query if note matches glob
   string noteGlob = "*";
+  /// include transaction in query if it has all of these tags
+  string[] tags = [];
 
   /// sort criteria
   SortParameter sortBy = SortParameter(ParameterType.date, Yes.ascending);
@@ -58,7 +60,8 @@ struct Query {
       trans.date <= maxDate              &&
       trans.source.globMatch(sourceGlob) &&
       trans.dest.globMatch(destGlob)     &&
-      trans.note.globMatch(noteGlob);
+      trans.note.globMatch(noteGlob)     &&
+      tags.all!(x => trans.tags.canFind(x));
   }
 
   static auto sorter(string op, string member)() {
@@ -82,6 +85,7 @@ struct Query {
       case amount:
         transactions.sort!(sorter!(op, "amount")());
         break;
+      case tags:
       case sort:
       case revsort:
         break;

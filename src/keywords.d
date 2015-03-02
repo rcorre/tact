@@ -4,6 +4,9 @@ module keywords;
 import std.conv : to;
 import std.typecons : Flag, Yes, No;
 
+/// token used to separate tags in a tag list argument
+enum tagDelimiter = ',';
+
 /// type of action to take
 enum OperationType {
   create  , /// record a new transaction
@@ -22,6 +25,7 @@ enum ParameterType {
   date    , /// to date on which a transaction occured
   note    , /// a note about the transaction
   amount  , /// the quantity of money in a transaction
+  tags    , /// categorical transaction tags
   sort    , /// ascending sort parameter
   revsort , /// descending sort parameter
 }
@@ -42,6 +46,7 @@ private enum parameterKeywords = [
   "on"     : ParameterType.date,
   "for"    : ParameterType.note,
   "amount" : ParameterType.amount,
+  "tags"   : ParameterType.tags,
   "sort"   : ParameterType.sort,
   "revsort": ParameterType.revsort,
 ];

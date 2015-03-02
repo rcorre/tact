@@ -2,7 +2,7 @@ module interpreter;
 
 import std.conv      : to;
 import std.range     : chunks, drop, empty;
-import std.array     : array;
+import std.array     : array, split;
 import std.string    : isNumeric, format;
 import std.datetime  : Date, Clock;
 import std.exception : enforce;
@@ -67,6 +67,9 @@ Transaction parseTransaction(string[] args, Config cfg) {
       case amount:
         trans.amount = value.to!float;
         break;
+      case tags:
+        trans.tags = value.split(tagDelimiter);
+        break;
       case sort:
       case revsort:
         break;
@@ -101,6 +104,9 @@ Query parseQuery(string[] args, Config cfg) {
       case date:
         value.assignMinMax!(x => x.stringToDate(cfg.dateFormat))(cfg.rangeDelimiter, params.minDate,
             params.maxDate);
+        break;
+      case tags:
+        params.tags = value.split(tagDelimiter);
         break;
       case sort:
         params.sortBy = SortParameter(parseParameterKeyword(value, cfg.aliases), Yes.ascending);
@@ -190,7 +196,7 @@ unittest {
 unittest {
   // test with default config and some mock arguments
   auto cfg = Config.load("nonexistantpath");
-  auto args = [ "98.25", "to", "store", "on", "08/04/15", "for", "stuff" ];
+  auto args = [ "98.25", "to", "store", "on", "08/04/15", "for", "stuff", "tags", "food,travel" ];
 
   // check command type
   assert(args.operationType(cfg) == OperationType.create);
@@ -202,19 +208,21 @@ unittest {
   assert(trans.dest == "store");
   assert(trans.date == Date(2015, 8, 4));
   assert(trans.note == "stuff");
+  assert(trans.tags == [ "food", "travel" ]);
 }
 
 /// parse a query
 unittest {
   // test with default config and some mock arguments
   auto cfg = Config.load("nonexistantpath");
-  auto args = [ "list" ]; // just list everythign
+  auto args = [ "list" ]; // just list everything
 
   // check command type
   assert(args.operationType(cfg) == OperationType.query);
   assert(args.parseQuery(cfg) == Query.init); // should be default query
 
-  args = [ "list", "amount", "250-525", "from", "*bank*" , "on", "05/01/15-05/22/15"];
+  args = [ "list", "amount", "250-525", "from", "*bank*" , "on", "05/01/15-05/22/15",
+    "tags", "food,travel"];
 
   // check command type
   assert(args.operationType(cfg) == OperationType.query);
@@ -225,4 +233,5 @@ unittest {
   assert(query.maxDate    == Date(2015, 5, 22));
   assert(query.sourceGlob == "*bank*");
   assert(query.destGlob   == "*");
+  assert(query.tags       == [ "food", "travel" ]);
 }

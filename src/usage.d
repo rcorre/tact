@@ -76,6 +76,7 @@ void printFieldDescriptions() {
     printDescription(dest  , `set the transaction dest   [default=""]`);
     printDescription(date  , `set the transaction date   [default=today]`);
     printDescription(note  , `assign a descriptive note  [default=""]`);
+    printDescription(tags  , `comma-separated tag list   [default=""]`);
   }
 }
 
@@ -86,5 +87,6 @@ void printQueryDescriptions() {
     printDescription(source, `match transaction source - supports glob matching`);
     printDescription(dest  , `match transaction dest   - supports glob matching`);
     printDescription(note  , `match transaction note   - supports glob matching`);
+    printDescription(tags  , `match transaction tags   - comma-separated list`);
   }
 }

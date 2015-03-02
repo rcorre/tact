@@ -19,6 +19,7 @@ struct Transaction {
     string source; /// source the money flows out of
     string dest;   /// destination the money flows in to
     string note;   /// a textual explanation of the transaction
+    string[] tags; /// tags used to categorize and group transactions
   }
   Date date; /// date that transaction occured
 
@@ -37,6 +38,7 @@ unittest {
   trans.dest   = "some_store";
   trans.note   = "groceries and stuff";
   trans.date   = Date(2015, 1, 4);
+  trans.tags   = [ "food", "living" ];
 
   // is data preserved through serialization?
   auto json = trans.toJSON;
